@@ -2,10 +2,13 @@
   <div class="p-6">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold">Domain Manager</h1>
-      <Button @click="openAddModal">
-        <Plus class="w-4 h-4 mr-2" />
-        Add Domain
-      </Button>
+      <div class="flex items-center gap-4">
+        <ThemeToggle />
+        <Button @click="openAddModal">
+          <Plus class="w-4 h-4 mr-2" />
+          Add Domain
+        </Button>
+      </div>
     </div>
 
     <div class="bg-card rounded-lg shadow-sm border">
@@ -95,6 +98,7 @@
 import { ref, onMounted } from 'vue'
 import { Plus, Edit, Trash2, ToggleLeft, ToggleRight } from 'lucide-vue-next'
 import Button from '@/components/ui/button.vue'
+import ThemeToggle from './ThemeToggle.vue'
 import AddDomainModal from './AddDomainModal.vue'
 import EditDomainModal from './EditDomainModal.vue'
 import { domainApi } from '@/api/domain.api'
