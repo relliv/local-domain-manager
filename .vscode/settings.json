@@ -14,4 +14,24 @@
   "css.customData": [
     ".vscode/tailwind.json"
   ],
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#b0a28a",
+    "activityBar.background": "#b0a28a",
+    "activityBar.foreground": "#15202b",
+    "activityBar.inactiveForeground": "#15202b99",
+    "activityBarBadge.background": "#4d7264",
+    "activityBarBadge.foreground": "#e7e7e7",
+    "commandCenter.border": "#15202b99",
+    "sash.hoverBorder": "#b0a28a",
+    "statusBar.background": "#9c8a6b",
+    "statusBar.foreground": "#15202b",
+    "statusBarItem.hoverBackground": "#7f7055",
+    "statusBarItem.remoteBackground": "#9c8a6b",
+    "statusBarItem.remoteForeground": "#15202b",
+    "titleBar.activeBackground": "#9c8a6b",
+    "titleBar.activeForeground": "#15202b",
+    "titleBar.inactiveBackground": "#9c8a6b99",
+    "titleBar.inactiveForeground": "#15202b99"
+  },
+  "peacock.color": "#9c8a6b",
 }
