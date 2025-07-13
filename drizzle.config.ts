@@ -5,7 +5,7 @@ export default {
   out: './drizzle',
   driver: 'better-sqlite',
   dbCredentials: {
-    url: './data/domains.db',
+    url: './data/local-domain-manager.db',
   },
   verbose: true,
   strict: true,

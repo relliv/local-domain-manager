@@ -15,7 +15,7 @@ const getDbPath = () => {
     fs.mkdirSync(dbDir, { recursive: true });
   }
   
-  return path.join(dbDir, 'domains.db');
+  return path.join(dbDir, 'local-domain-manager.db');
 };
 
 // Create database instance
