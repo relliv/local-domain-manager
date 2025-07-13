@@ -47,8 +47,8 @@ export const initDatabase = () => {
       description TEXT,
       category TEXT,
       tags TEXT,
-      created_at INTEGER DEFAULT CURRENT_TIMESTAMP,
-      updated_at INTEGER DEFAULT CURRENT_TIMESTAMP
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
     );
     
     CREATE UNIQUE INDEX IF NOT EXISTS idx_domain_name ON domains(name);

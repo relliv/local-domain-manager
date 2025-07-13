@@ -8,20 +8,23 @@ export function setupIpcHandlers() {
   // Get all domains
   ipcMain.handle('domain:get-all', async () => {
     try {
-      return await DomainService.getAllDomains();
-    } catch (error) {
+      const domains = await DomainService.getAllDomains();
+      // Ensure all domains are serializable
+      return JSON.parse(JSON.stringify(domains));
+    } catch (error: any) {
       console.error('Error getting domains:', error);
-      throw error;
+      throw new Error(error.message || 'Failed to get domains');
     }
   });
 
   // Get domain by ID
   ipcMain.handle('domain:get-by-id', async (_, id: number) => {
     try {
-      return await DomainService.getDomainById(id);
-    } catch (error) {
+      const domain = await DomainService.getDomainById(id);
+      return domain ? JSON.parse(JSON.stringify(domain)) : undefined;
+    } catch (error: any) {
       console.error('Error getting domain:', error);
-      throw error;
+      throw new Error(error.message || 'Failed to get domain');
     }
   });
 
@@ -36,7 +39,9 @@ export function setupIpcHandlers() {
         }
       }
       
-      return await DomainService.createDomain(data);
+      const result = await DomainService.createDomain(data);
+      // Ensure the result is serializable
+      return JSON.parse(JSON.stringify(result));
     } catch (error: any) {
       console.error('Error creating domain:', error);
       
@@ -45,17 +50,19 @@ export function setupIpcHandlers() {
         await PermissionHelper.showPermissionError();
       }
       
-      throw error;
+      // Throw a serializable error
+      throw new Error(error.message || 'Failed to create domain');
     }
   });
 
   // Update domain
   ipcMain.handle('domain:update', async (_, id: number, data: Partial<DomainFormData>) => {
     try {
-      return await DomainService.updateDomain(id, data);
-    } catch (error) {
+      const result = await DomainService.updateDomain(id, data);
+      return result ? JSON.parse(JSON.stringify(result)) : undefined;
+    } catch (error: any) {
       console.error('Error updating domain:', error);
-      throw error;
+      throw new Error(error.message || 'Failed to update domain');
     }
   });
 
@@ -72,10 +79,11 @@ export function setupIpcHandlers() {
   // Toggle domain status
   ipcMain.handle('domain:toggle-status', async (_, id: number) => {
     try {
-      return await DomainService.toggleDomainStatus(id);
-    } catch (error) {
+      const result = await DomainService.toggleDomainStatus(id);
+      return result ? JSON.parse(JSON.stringify(result)) : undefined;
+    } catch (error: any) {
       console.error('Error toggling domain status:', error);
-      throw error;
+      throw new Error(error.message || 'Failed to toggle domain status');
     }
   });
 

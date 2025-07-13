@@ -15,8 +15,10 @@ function dbToDomain(dbDomain: any): Domain {
     description: dbDomain.description,
     category: dbDomain.category,
     tags: dbDomain.tags,
-    created_at: dbDomain.createdAt?.toISOString() || new Date().toISOString(),
-    updated_at: dbDomain.updatedAt?.toISOString() || new Date().toISOString(),
+    created_at: dbDomain.createdAt instanceof Date ? dbDomain.createdAt.toISOString() : 
+                dbDomain.createdAt?.toString() || new Date().toISOString(),
+    updated_at: dbDomain.updatedAt instanceof Date ? dbDomain.updatedAt.toISOString() : 
+                dbDomain.updatedAt?.toString() || new Date().toISOString(),
   };
 }
 
