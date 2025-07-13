@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { DomainService } from '../../src/db/services/domain.service';
-import { HostFileService } from '../../src/services/host-file.service';
+import { HostFileService } from './host-file.service';
 import { PermissionHelper } from './permission-helper';
 import type { DomainFormData } from '../../src/types/domain';
 

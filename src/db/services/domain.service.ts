@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '../index';
 import { domains } from '../schema';
 import type { Domain, DomainFormData } from '@/types/domain';
-import { HostFileService } from '@/services/host-file.service';
+import { HostFileService } from '../../../electron/main/host-file.service';
 
 // Helper to convert from DB format to Domain format
 function dbToDomain(dbDomain: any): Domain {
