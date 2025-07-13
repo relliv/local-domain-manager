@@ -13,7 +13,7 @@ export interface Domain {
 
 export interface DomainFormData {
   name: string;
-  ip_address: string;
+  ip_address?: string;
   port?: number;
   is_active: boolean;
   description?: string;

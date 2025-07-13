@@ -18,15 +18,6 @@
           />
         </div>
         <div class="space-y-2">
-          <Label htmlFor="edit-ip_address">IP Address</Label>
-          <Input
-            id="edit-ip_address"
-            v-model="formData.ip_address"
-            placeholder="127.0.0.1"
-            required
-          />
-        </div>
-        <div class="space-y-2">
           <Label htmlFor="edit-port">Port (optional)</Label>
           <Input
             id="edit-port"
@@ -112,7 +103,6 @@ const isSubmitting = ref(false)
 
 const formData = ref<DomainFormData>({
   name: '',
-  ip_address: '',
   port: undefined,
   is_active: true,
   description: '',
@@ -128,7 +118,6 @@ watch(() => props.domain, (newDomain) => {
   if (newDomain) {
     formData.value = {
       name: newDomain.name,
-      ip_address: newDomain.ip_address,
       port: newDomain.port,
       is_active: newDomain.is_active,
       description: newDomain.description || '',

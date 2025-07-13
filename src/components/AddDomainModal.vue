@@ -27,15 +27,6 @@
           />
         </div>
         <div class="space-y-2">
-          <Label htmlFor="ip_address">IP Address</Label>
-          <Input
-            id="ip_address"
-            v-model="formData.ip_address"
-            placeholder="127.0.0.1"
-            required
-          />
-        </div>
-        <div class="space-y-2">
           <Label htmlFor="port">Port (optional)</Label>
           <Input
             id="port"
@@ -125,7 +116,6 @@ const hostWarning = ref('')
 
 const formData = ref<DomainFormData>({
   name: '',
-  ip_address: '',
   port: undefined,
   is_active: true,
   description: '',
@@ -143,7 +133,6 @@ watch(open, (newVal) => {
     // Reset form when modal closes
     formData.value = {
       name: '',
-      ip_address: '',
       port: undefined,
       is_active: true,
       description: '',

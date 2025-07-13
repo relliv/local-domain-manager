@@ -4,17 +4,33 @@ import { domains } from '../schema';
 import type { Domain, DomainFormData } from '@/types/domain';
 import { HostFileService } from '@/services/host-file.service';
 
+// Helper to convert from DB format to Domain format
+function dbToDomain(dbDomain: any): Domain {
+  return {
+    id: dbDomain.id,
+    name: dbDomain.name,
+    ip_address: dbDomain.ipAddress,
+    port: dbDomain.port,
+    is_active: dbDomain.isActive,
+    description: dbDomain.description,
+    category: dbDomain.category,
+    tags: dbDomain.tags,
+    created_at: dbDomain.createdAt?.toISOString() || new Date().toISOString(),
+    updated_at: dbDomain.updatedAt?.toISOString() || new Date().toISOString(),
+  };
+}
+
 export class DomainService {
   static async getAllDomains(): Promise<Domain[]> {
     const db = getDb();
     const result = await db.select().from(domains).all();
-    return result as Domain[];
+    return result.map(dbToDomain);
   }
 
   static async getDomainById(id: number): Promise<Domain | undefined> {
     const db = getDb();
     const result = await db.select().from(domains).where(eq(domains.id, id)).get();
-    return result as Domain | undefined;
+    return result ? dbToDomain(result) : undefined;
   }
 
   static async createDomain(data: DomainFormData): Promise<Domain> {
@@ -24,27 +40,31 @@ export class DomainService {
       throw new Error(`Domain ${data.name} already exists in host file`);
     }
 
-    // Save to database first
+    // Save to database first with default IP
     const db = getDb();
     const result = await db.insert(domains).values({
-      ...data,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      name: data.name,
+      ipAddress: '127.0.0.1', // Always use default IP
+      port: data.port || 80,
+      isActive: data.is_active,
+      description: data.description,
+      category: data.category,
+      tags: data.tags,
     }).returning().get();
 
     // If active, add to host file
     if (data.is_active) {
       try {
-        await HostFileService.addHostEntry(data.ip_address, data.name, data.description);
+        await HostFileService.addHostEntry(result.ipAddress, result.name, result.description);
         await HostFileService.flushDNSCache();
-      } catch (error) {
+      } catch (error: any) {
         // If host file update fails, remove from database
         await db.delete(domains).where(eq(domains.id, result.id)).run();
         throw new Error(`Failed to update host file: ${error.message}`);
       }
     }
 
-    return result as Domain;
+    return dbToDomain(result);
   }
 
   static async updateDomain(id: number, data: Partial<DomainFormData>): Promise<Domain | undefined> {
@@ -54,12 +74,17 @@ export class DomainService {
     const currentDomain = await this.getDomainById(id);
     if (!currentDomain) return undefined;
 
-    // Update database
+    // Update database (ensure IP address is never changed from 127.0.0.1)
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.port !== undefined) updateData.port = data.port;
+    if (data.is_active !== undefined) updateData.isActive = data.is_active;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.category !== undefined) updateData.category = data.category;
+    if (data.tags !== undefined) updateData.tags = data.tags;
+    
     const result = await db.update(domains)
-      .set({
-        ...data,
-        updated_at: new Date().toISOString(),
-      })
+      .set(updateData)
       .where(eq(domains.id, id))
       .returning()
       .get();
@@ -68,44 +93,41 @@ export class DomainService {
 
     // Handle host file updates
     try {
-      // If domain name or IP changed, update host file
-      if (data.name && data.name !== currentDomain.name || 
-          data.ip_address && data.ip_address !== currentDomain.ip_address) {
-        
+      // If domain name changed, update host file
+      if (data.name && data.name !== currentDomain.name) {
         // Remove old entry if it was active
         if (currentDomain.is_active) {
           await HostFileService.removeHostEntry(currentDomain.name);
         }
         
         // Add new entry if active
-        if (result.is_active) {
-          await HostFileService.addHostEntry(result.ip_address, result.name, result.description || undefined);
+        if (result.isActive) {
+          await HostFileService.addHostEntry(result.ipAddress, result.name, result.description || undefined);
         }
       } else if (data.is_active !== undefined && data.is_active !== currentDomain.is_active) {
         // Just toggling active status
         if (data.is_active) {
-          await HostFileService.addHostEntry(result.ip_address, result.name, result.description || undefined);
+          await HostFileService.addHostEntry(result.ipAddress, result.name, result.description || undefined);
         } else {
           await HostFileService.removeHostEntry(result.name);
         }
       }
       
       await HostFileService.flushDNSCache();
-    } catch (error) {
+    } catch (error: any) {
       // Revert database changes on host file error
       await db.update(domains)
         .set({
           name: currentDomain.name,
-          ip_address: currentDomain.ip_address,
-          is_active: currentDomain.is_active,
-          updated_at: currentDomain.updated_at,
+          ipAddress: currentDomain.ip_address,
+          isActive: currentDomain.is_active,
         })
         .where(eq(domains.id, id))
         .run();
       throw new Error(`Failed to update host file: ${error.message}`);
     }
 
-    return result as Domain;
+    return dbToDomain(result);
   }
 
   static async deleteDomain(id: number): Promise<boolean> {

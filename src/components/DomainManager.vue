@@ -17,7 +17,6 @@
           <thead>
             <tr class="border-b">
               <th class="text-left p-4">Domain Name</th>
-              <th class="text-left p-4">IP Address</th>
               <th class="text-left p-4">Port</th>
               <th class="text-left p-4">Status</th>
               <th class="text-left p-4">Category</th>
@@ -27,7 +26,6 @@
           <tbody>
             <tr v-for="domain in domains" :key="domain.id" class="border-b hover:bg-muted/50">
               <td class="p-4 font-medium">{{ domain.name }}</td>
-              <td class="p-4">{{ domain.ip_address }}</td>
               <td class="p-4">{{ domain.port || 80 }}</td>
               <td class="p-4">
                 <span 
@@ -70,7 +68,7 @@
               </td>
             </tr>
             <tr v-if="domains.length === 0">
-              <td colspan="6" class="p-8 text-center text-muted-foreground">
+              <td colspan="5" class="p-8 text-center text-muted-foreground">
                 No domains found. Click "Add Domain" to create one.
               </td>
             </tr>
