@@ -23,5 +23,17 @@ export const domainApi = {
 
   async toggleDomainStatus(id: number): Promise<Domain | undefined> {
     return window.ipcRenderer.invoke('domain:toggle-status', id);
+  },
+
+  async checkHostExists(hostname: string): Promise<boolean> {
+    return window.ipcRenderer.invoke('host:check-exists', hostname);
+  },
+
+  async getAllHostEntries(): Promise<any[]> {
+    return window.ipcRenderer.invoke('host:get-all');
+  },
+
+  async syncHostFile(): Promise<{ success: boolean }> {
+    return window.ipcRenderer.invoke('host:sync');
   }
 };
