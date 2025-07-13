@@ -28,3 +28,14 @@ release
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+
+## cc
+.claude
+.hive-mind
+CLAUDE.md
+memory
+.memory
+.swarm
+claude-flow
+claude-flow.bat
+claude-flow.ps1
