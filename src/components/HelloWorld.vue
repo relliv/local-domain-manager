@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import Button from '@/components/ui/button.vue'
 
 defineProps<{ msg: string }>();
 
@@ -10,9 +11,20 @@ const count = ref(0);
   <h1>{{ msg }}</h1>
 
   <div class="card">
-    <button class="mb-4" type="button" @click="count++">
-      count is {{ count }}
-    </button>
+    <div class="flex gap-4 justify-center mb-4">
+      <Button @click="count++">
+        count is {{ count }}
+      </Button>
+      <Button variant="secondary" @click="count = 0">
+        Reset
+      </Button>
+      <Button variant="outline" size="sm">
+        Small
+      </Button>
+      <Button variant="destructive" size="icon">
+        X
+      </Button>
+    </div>
     <p>
       Edit
       <code>components/HelloWorld.vue</code> to test HMR
