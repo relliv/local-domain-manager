@@ -9,16 +9,18 @@ function dbToDomain(dbDomain: any): Domain {
   return {
     id: dbDomain.id,
     name: dbDomain.name,
-    ip_address: dbDomain.ipAddress,
+    ip_address: dbDomain.ipAddress, // Drizzle maps ip_address column to ipAddress field
     port: dbDomain.port,
-    is_active: dbDomain.isActive,
+    is_active: dbDomain.isActive, // Drizzle maps is_active column to isActive field
     description: dbDomain.description,
     category: dbDomain.category,
     tags: dbDomain.tags,
     created_at: dbDomain.createdAt instanceof Date ? dbDomain.createdAt.toISOString() : 
-                dbDomain.createdAt?.toString() || new Date().toISOString(),
+                (typeof dbDomain.createdAt === 'number' ? new Date(dbDomain.createdAt * 1000).toISOString() :
+                dbDomain.createdAt?.toString() || new Date().toISOString()),
     updated_at: dbDomain.updatedAt instanceof Date ? dbDomain.updatedAt.toISOString() : 
-                dbDomain.updatedAt?.toString() || new Date().toISOString(),
+                (typeof dbDomain.updatedAt === 'number' ? new Date(dbDomain.updatedAt * 1000).toISOString() :
+                dbDomain.updatedAt?.toString() || new Date().toISOString()),
   };
 }
 
