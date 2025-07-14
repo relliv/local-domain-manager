@@ -31,8 +31,7 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.6.0",
-    "drizzle-orm": "^0.29.3",
-    "sudo-prompt": "^9.2.1"
+    "drizzle-orm": "^0.29.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.4",

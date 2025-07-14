@@ -185,12 +185,12 @@ const handleSubmit = async () => {
   } catch (error: any) {
     console.error('Failed to create domain:', error)
     
-    if (error.message.includes('Permission denied')) {
-      alert('Permission denied. Please grant administrator access to modify the host file.')
+    if (error.message.includes('cancelled') || error.message.includes('denied')) {
+      alert('Administrator permission is required to modify the host file. Please grant permission when prompted.')
     } else if (error.message.includes('already exists')) {
       alert(error.message)
     } else {
-      alert('Failed to create domain. Please try again.')
+      alert(`Failed to create domain: ${error.message}`)
     }
   } finally {
     isSubmitting.value = false

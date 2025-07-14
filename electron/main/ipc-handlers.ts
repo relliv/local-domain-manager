@@ -31,24 +31,11 @@ export function setupIpcHandlers() {
   // Create domain
   ipcMain.handle('domain:create', async (_, data: DomainFormData) => {
     try {
-      // If domain is active, check permissions first
-      if (data.is_active) {
-        const hasPermission = await PermissionHelper.requestHostFilePermission();
-        if (!hasPermission) {
-          throw new Error('Permission denied to modify host file');
-        }
-      }
-      
       const result = await DomainService.createDomain(data);
       // Ensure the result is serializable
       return JSON.parse(JSON.stringify(result));
     } catch (error: any) {
       console.error('Error creating domain:', error);
-      
-      // Show permission error dialog if it's a permission issue
-      if (error.message.includes('Permission denied') || error.message.includes('EACCES')) {
-        await PermissionHelper.showPermissionError();
-      }
       
       // Throw a serializable error
       throw new Error(error.message || 'Failed to create domain');

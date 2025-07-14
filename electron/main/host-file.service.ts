@@ -146,57 +146,114 @@ export class HostFileService {
 
   private static async writeWithElevatedPrivileges(hostPath: string, content: string, mode: 'write' | 'append'): Promise<void> {
     const platform = process.platform;
+    const tmpFile = path.join(os.tmpdir(), `hosts_temp_${Date.now()}`);
     
-    if (platform === 'darwin' || platform === 'linux') {
-      // On macOS and Linux, we'll create a temporary file and use sudo
-      const tmpFile = path.join(os.tmpdir(), `hosts_temp_${Date.now()}`);
-      
-      if (mode === 'append') {
-        // For append, we need to read existing content first
-        const existingContent = await this.readHostFile();
-        await fs.writeFile(tmpFile, existingContent + content);
-      } else {
-        await fs.writeFile(tmpFile, content);
-      }
+    // Prepare the temporary file
+    if (mode === 'append') {
+      const existingContent = await this.readHostFile();
+      await fs.writeFile(tmpFile, existingContent + content);
+    } else {
+      await fs.writeFile(tmpFile, content);
+    }
 
-      try {
-        // Use osascript on macOS to prompt for admin privileges
-        if (platform === 'darwin') {
-          const script = `do shell script "cp '${tmpFile}' '${hostPath}'" with administrator privileges`;
-          await execAsync(`osascript -e '${script}'`);
-        } else {
-          // On Linux, use pkexec or gksudo if available
+    try {
+      if (platform === 'darwin') {
+        // macOS: Use osascript to trigger the native authorization dialog
+        const appName = 'Local Domain Manager';
+        const script = `
+          set tmpFile to "${tmpFile}"
+          set hostFile to "${hostPath}"
+          
+          try
+            do shell script "cp '" & tmpFile & "' '" & hostFile & "'" with administrator privileges
+            return "success"
+          on error errMsg
+            return "error: " & errMsg
+          end try
+        `;
+        
+        const result = await execAsync(`osascript -e '${script.trim()}'`);
+        
+        if (result.stderr || (result.stdout && result.stdout.includes('error:'))) {
+          throw new Error('User cancelled or permission denied');
+        }
+      } else if (platform === 'linux') {
+        // Linux: Try different elevation methods
+        const elevationCommands = [
+          // pkexec (PolicyKit) - shows graphical dialog on most modern distros
+          {
+            cmd: 'pkexec',
+            args: ['cp', tmpFile, hostPath],
+            name: 'PolicyKit'
+          },
+          // gksudo - older but still present on some systems
+          {
+            cmd: 'gksudo',
+            args: ['-m', 'Local Domain Manager needs to update your hosts file', `cp "${tmpFile}" "${hostPath}"`],
+            name: 'gksudo'
+          },
+          // kdesudo - for KDE systems
+          {
+            cmd: 'kdesudo',
+            args: ['--comment', 'Local Domain Manager needs to update your hosts file', '-c', `cp "${tmpFile}" "${hostPath}"`],
+            name: 'kdesudo'
+          }
+        ];
+
+        let success = false;
+        let lastError: Error | null = null;
+
+        for (const elevation of elevationCommands) {
           try {
-            await execAsync(`pkexec cp "${tmpFile}" "${hostPath}"`);
-          } catch {
-            // Fallback to sudo (won't work in GUI apps)
-            await execAsync(`sudo cp "${tmpFile}" "${hostPath}"`);
+            await execAsync(`which ${elevation.cmd}`);
+            await execAsync(`${elevation.cmd} ${elevation.args.join(' ')}`);
+            success = true;
+            break;
+          } catch (error: any) {
+            lastError = error;
+            continue;
           }
         }
-      } finally {
-        // Clean up temp file
-        await fs.unlink(tmpFile).catch(() => {});
-      }
-    } else if (platform === 'win32') {
-      // On Windows, we need to use PowerShell with elevation
-      const tmpFile = path.join(os.tmpdir(), `hosts_temp_${Date.now()}`);
-      
-      if (mode === 'append') {
-        const existingContent = await this.readHostFile();
-        await fs.writeFile(tmpFile, existingContent + content);
-      } else {
-        await fs.writeFile(tmpFile, content);
-      }
 
-      const command = `Start-Process powershell -Verb RunAs -ArgumentList "Copy-Item -Path '${tmpFile}' -Destination '${hostPath}' -Force"`;
-      
-      try {
-        await execAsync(`powershell -Command "${command}"`);
-        // Wait a bit for the operation to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } finally {
-        await fs.unlink(tmpFile).catch(() => {});
+        if (!success) {
+          // If no GUI elevation tool is available, try sudo with a message
+          try {
+            await execAsync(`sudo -p "Local Domain Manager needs administrator access to update hosts file. Password: " cp "${tmpFile}" "${hostPath}"`);
+          } catch (error) {
+            throw new Error('Permission denied. Please run the application with administrator privileges.');
+          }
+        }
+      } else if (platform === 'win32') {
+        // Windows: Create a VBScript to show UAC prompt
+        const vbsFile = path.join(os.tmpdir(), `elevate_${Date.now()}.vbs`);
+        const vbsContent = `
+          Set UAC = CreateObject("Shell.Application")
+          UAC.ShellExecute "cmd.exe", "/c copy /Y """ & "${tmpFile.replace(/\\/g, '\\\\')}" & """ """ & "${hostPath.replace(/\\/g, '\\\\')}" & """", "", "runas", 1
+        `;
+        
+        await fs.writeFile(vbsFile, vbsContent.trim());
+        
+        try {
+          // Execute the VBScript which will show UAC prompt
+          await execAsync(`cscript //NoLogo "${vbsFile}"`);
+          
+          // Wait for the operation to complete
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Verify the file was updated
+          const stats = await fs.stat(hostPath);
+          const tmpStats = await fs.stat(tmpFile);
+          
+          if (stats.mtime < tmpStats.mtime) {
+            throw new Error('Host file was not updated. Permission may have been denied.');
+          }
+        } finally {
+          await fs.unlink(vbsFile).catch(() => {});
+        }
       }
+    } finally {
+      // Clean up temp file
+      await fs.unlink(tmpFile).catch(() => {});
     }
   }
 

@@ -146,8 +146,8 @@ const toggleStatus = async (domain: Domain) => {
     }
   } catch (error: any) {
     console.error('Failed to toggle domain status:', error)
-    if (error.message.includes('Permission denied')) {
-      alert('Permission denied. Please grant administrator access to modify the host file.')
+    if (error.message.includes('cancelled') || error.message.includes('denied')) {
+      alert('Administrator permission is required to modify the host file. Please grant permission when prompted.')
     } else {
       alert(`Failed to toggle domain status: ${error.message}`)
     }

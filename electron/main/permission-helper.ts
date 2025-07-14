@@ -1,60 +1,51 @@
 import { dialog, shell } from 'electron';
-import * as sudo from 'sudo-prompt';
 import * as os from 'os';
 
 const appName = 'Local Domain Manager';
 
 export class PermissionHelper {
-  static async requestHostFilePermission(): Promise<boolean> {
-    const platform = process.platform;
-    
-    const result = await dialog.showMessageBox({
-      type: 'info',
-      title: 'Administrator Permission Required',
-      message: 'Local Domain Manager needs administrator permission to modify your hosts file.',
-      detail: platform === 'darwin' 
-        ? 'You will be prompted to enter your password to allow host file modifications.'
-        : 'This application needs elevated privileges to modify the system hosts file.',
-      buttons: ['Grant Permission', 'Cancel'],
-      defaultId: 0,
-      cancelId: 1,
-    });
-
-    return result.response === 0;
+  /**
+   * Get the application name for permission dialogs
+   */
+  static getAppName(): string {
+    return appName;
   }
 
-  static async executeWithElevation(command: string): Promise<{ error: Error | null; stdout: string; stderr: string }> {
-    return new Promise((resolve) => {
-      const options = {
-        name: appName,
-        icns: '/Applications/Local Domain Manager.app/Contents/Resources/icon.icns', // macOS only
-      };
-
-      sudo.exec(command, options, (error, stdout, stderr) => {
-        resolve({ error, stdout: stdout || '', stderr: stderr || '' });
-      });
-    });
+  /**
+   * Get platform-specific permission message
+   */
+  static getPermissionMessage(): string {
+    const platform = process.platform;
+    
+    if (platform === 'darwin') {
+      return 'Local Domain Manager needs to modify your hosts file. You will be prompted for your password.';
+    } else if (platform === 'win32') {
+      return 'Local Domain Manager needs administrator permission to modify the hosts file. Please click "Yes" in the UAC dialog.';
+    } else {
+      return 'Local Domain Manager needs administrator permission to modify the hosts file. Please enter your password when prompted.';
+    }
   }
 
   static async showPermissionError(): Promise<void> {
-    const result = await dialog.showMessageBox({
+    const platform = process.platform;
+    let detail = 'Local Domain Manager could not modify the hosts file. ';
+    
+    if (platform === 'darwin') {
+      detail += 'Please enter your password when prompted to grant permission.';
+    } else if (platform === 'win32') {
+      detail += 'Please click "Yes" in the User Account Control dialog to grant permission.';
+    } else {
+      detail += 'Please enter your password when prompted to grant administrator privileges.';
+    }
+    
+    await dialog.showMessageBox({
       type: 'error',
       title: 'Permission Denied',
       message: 'Failed to modify hosts file',
-      detail: 'Local Domain Manager could not modify the hosts file. Please ensure you have administrator privileges and try again.',
-      buttons: ['Open System Preferences', 'OK'],
-      defaultId: 1,
-      cancelId: 1,
+      detail: detail,
+      buttons: ['OK'],
+      defaultId: 0,
     });
-
-    if (result.response === 0) {
-      // Open system preferences
-      if (process.platform === 'darwin') {
-        shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy');
-      } else if (process.platform === 'win32') {
-        shell.openExternal('ms-settings:privacy');
-      }
-    }
   }
 
   static async checkAdminRights(): Promise<boolean> {
