@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, toRaw } from 'vue'
 import { AlertCircle } from 'lucide-vue-next'
 import Dialog from '@/components/ui/dialog.vue'
 import DialogContent from '@/components/ui/dialog-content.vue'
@@ -179,7 +179,7 @@ const handleSubmit = async () => {
   hostWarning.value = ''
   
   try {
-    const domain = await domainApi.createDomain(formData.value)
+    const domain = await domainApi.createDomain(toRaw(formData.value))
     emit('domain-added', domain)
     open.value = false
   } catch (error: any) {
