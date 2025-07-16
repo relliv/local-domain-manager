@@ -84,7 +84,6 @@ export class DomainService {
 
     // Save to database first with default IP
     const db = getDb();
-    const now = new Date();
     const result = await db.insert(domains).values({
       name: data.name,
       ipAddress: '127.0.0.1', // Always use default IP
@@ -93,8 +92,7 @@ export class DomainService {
       description: data.description,
       category: data.category,
       tags: data.tags,
-      createdAt: now,
-      updatedAt: now,
+      // Let SQLite handle timestamps with DEFAULT values
     }).returning().get();
 
     // If active, add to host file
@@ -120,15 +118,14 @@ export class DomainService {
     if (!currentDomain) return undefined;
 
     // Update database (ensure IP address is never changed from 127.0.0.1)
-    const updateData: any = {
-      updatedAt: new Date()
-    };
+    const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.port !== undefined) updateData.port = data.port;
     if (data.is_active !== undefined) updateData.isActive = data.is_active;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.category !== undefined) updateData.category = data.category;
     if (data.tags !== undefined) updateData.tags = data.tags;
+    // SQLite will update the updated_at timestamp automatically
     
     const result = await db.update(domains)
       .set(updateData)
