@@ -8,33 +8,48 @@ import { HostFileService } from '../../../electron/main/host-file.service';
 function dbToDomain(dbDomain: any): Domain {
   // Helper to safely convert timestamp to ISO string
   const toISOString = (timestamp: any): string => {
-    if (!timestamp) {
-      return new Date().toISOString();
-    }
-    
-    if (timestamp instanceof Date) {
-      return timestamp.toISOString();
-    }
-    
-    // If it's a number, assume it's a Unix timestamp
-    if (typeof timestamp === 'number') {
-      // Check if it's in seconds or milliseconds
-      // Unix timestamps before year 2001 in seconds would be less than 1000000000
-      const date = timestamp < 10000000000 ? new Date(timestamp * 1000) : new Date(timestamp);
-      return date.toISOString();
-    }
-    
-    // If it's a string, try to parse it
-    if (typeof timestamp === 'string') {
-      try {
-        return new Date(timestamp).toISOString();
-      } catch {
+    try {
+      if (!timestamp && timestamp !== 0) {
         return new Date().toISOString();
       }
+      
+      if (timestamp instanceof Date) {
+        return timestamp.toISOString();
+      }
+      
+      // If it's a number, assume it's a Unix timestamp
+      if (typeof timestamp === 'number') {
+        // Unix timestamps are in seconds, JavaScript expects milliseconds
+        const date = new Date(timestamp * 1000);
+        // Check if the date is valid
+        if (isNaN(date.getTime())) {
+          console.error('Invalid timestamp number:', timestamp);
+          return new Date().toISOString();
+        }
+        return date.toISOString();
+      }
+      
+      // If it's a string, try to parse it
+      if (typeof timestamp === 'string') {
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) {
+          console.error('Invalid timestamp string:', timestamp);
+          return new Date().toISOString();
+        }
+        return date.toISOString();
+      }
+      
+      console.error('Unknown timestamp type:', typeof timestamp, timestamp);
+      return new Date().toISOString();
+    } catch (error) {
+      console.error('Error converting timestamp:', error, timestamp);
+      return new Date().toISOString();
     }
-    
-    return new Date().toISOString();
   };
+
+  console.log('dbToDomain input:', dbDomain);
+  console.log('createdAt:', dbDomain.createdAt, typeof dbDomain.createdAt);
+  console.log('updatedAt:', dbDomain.updatedAt, typeof dbDomain.updatedAt);
 
   return {
     id: dbDomain.id,

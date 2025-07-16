@@ -1,8 +1,8 @@
 {
-  "name": "electron-vue-vite-tw",
+  "name": "local-domain-manager",
   "version": "1.0.0",
   "main": "dist-electron/main/index.js",
-  "description": "Really simple Electron + Vue + Vite boilerplate.",
+  "description": "Local Domain Manager",
   "author": "relliv",
   "license": "MIT",
   "private": true,
@@ -36,6 +36,7 @@
     "native-is-elevated": "^0.7.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@vitejs/plugin-vue": "^5.2.4",
     "@vueuse/core": "^13.5.0",
     "autoprefixer": "^10.4.21",
