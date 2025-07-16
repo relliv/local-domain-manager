@@ -6,6 +6,36 @@ import { HostFileService } from '../../../electron/main/host-file.service';
 
 // Helper to convert from DB format to Domain format
 function dbToDomain(dbDomain: any): Domain {
+  // Helper to safely convert timestamp to ISO string
+  const toISOString = (timestamp: any): string => {
+    if (!timestamp) {
+      return new Date().toISOString();
+    }
+    
+    if (timestamp instanceof Date) {
+      return timestamp.toISOString();
+    }
+    
+    // If it's a number, assume it's a Unix timestamp
+    if (typeof timestamp === 'number') {
+      // Check if it's in seconds or milliseconds
+      // Unix timestamps before year 2001 in seconds would be less than 1000000000
+      const date = timestamp < 10000000000 ? new Date(timestamp * 1000) : new Date(timestamp);
+      return date.toISOString();
+    }
+    
+    // If it's a string, try to parse it
+    if (typeof timestamp === 'string') {
+      try {
+        return new Date(timestamp).toISOString();
+      } catch {
+        return new Date().toISOString();
+      }
+    }
+    
+    return new Date().toISOString();
+  };
+
   return {
     id: dbDomain.id,
     name: dbDomain.name,
@@ -15,12 +45,8 @@ function dbToDomain(dbDomain: any): Domain {
     description: dbDomain.description,
     category: dbDomain.category,
     tags: dbDomain.tags,
-    created_at: dbDomain.createdAt instanceof Date ? dbDomain.createdAt.toISOString() : 
-                (typeof dbDomain.createdAt === 'number' ? new Date(dbDomain.createdAt * 1000).toISOString() :
-                dbDomain.createdAt?.toString() || new Date().toISOString()),
-    updated_at: dbDomain.updatedAt instanceof Date ? dbDomain.updatedAt.toISOString() : 
-                (typeof dbDomain.updatedAt === 'number' ? new Date(dbDomain.updatedAt * 1000).toISOString() :
-                dbDomain.updatedAt?.toString() || new Date().toISOString()),
+    created_at: toISOString(dbDomain.createdAt),
+    updated_at: toISOString(dbDomain.updatedAt),
   };
 }
 
@@ -46,6 +72,7 @@ export class DomainService {
 
     // Save to database first with default IP
     const db = getDb();
+    const now = new Date();
     const result = await db.insert(domains).values({
       name: data.name,
       ipAddress: '127.0.0.1', // Always use default IP
@@ -54,6 +81,8 @@ export class DomainService {
       description: data.description,
       category: data.category,
       tags: data.tags,
+      createdAt: now,
+      updatedAt: now,
     }).returning().get();
 
     // If active, add to host file
@@ -79,7 +108,9 @@ export class DomainService {
     if (!currentDomain) return undefined;
 
     // Update database (ensure IP address is never changed from 127.0.0.1)
-    const updateData: any = {};
+    const updateData: any = {
+      updatedAt: new Date()
+    };
     if (data.name !== undefined) updateData.name = data.name;
     if (data.port !== undefined) updateData.port = data.port;
     if (data.is_active !== undefined) updateData.isActive = data.is_active;
