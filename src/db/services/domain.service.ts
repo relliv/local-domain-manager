@@ -63,7 +63,19 @@ export class DomainService {
     return result ? dbToDomain(result) : undefined;
   }
 
+  static async getDomainByName(name: string): Promise<Domain | undefined> {
+    const db = getDb();
+    const result = await db.select().from(domains).where(eq(domains.name, name)).get();
+    return result ? dbToDomain(result) : undefined;
+  }
+
   static async createDomain(data: DomainFormData): Promise<Domain> {
+    // Check if domain already exists in database
+    const existingDomain = await this.getDomainByName(data.name);
+    if (existingDomain) {
+      throw new Error(`DUPLICATE_DOMAIN:${data.name}`);
+    }
+
     // Check if domain already exists in host file
     const hostExists = await HostFileService.checkHostExists(data.name);
     if (hostExists) {
@@ -88,7 +100,7 @@ export class DomainService {
     // If active, add to host file
     if (data.is_active) {
       try {
-        await HostFileService.addHostEntry(result.ipAddress, result.name, result.description);
+        await HostFileService.addHostEntry(result.ipAddress, result.name, result.description || undefined);
         await HostFileService.flushDNSCache();
       } catch (error: any) {
         // If host file update fails, remove from database

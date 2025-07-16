@@ -185,7 +185,10 @@ const handleSubmit = async () => {
   } catch (error: any) {
     console.error('Failed to create domain:', error)
     
-    if (error.message.includes('cancelled') || error.message.includes('denied')) {
+    if (error.message.includes('DUPLICATE_DOMAIN:')) {
+      const domainName = error.message.split('DUPLICATE_DOMAIN:')[1]
+      alert(`The domain "${domainName}" already exists in the database. Please use a different domain name or edit the existing one.`)
+    } else if (error.message.includes('cancelled') || error.message.includes('denied')) {
       alert('Administrator permission is required to modify the host file. Please grant permission when prompted.')
     } else if (error.message.includes('already exists')) {
       alert(error.message)
