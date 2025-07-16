@@ -3,7 +3,8 @@ import * as path from 'path';
 import * as os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import Sudoer from 'electron-sudo';
+import * as sudo from '@vscode/sudo-prompt';
+import isElevated from 'native-is-elevated';
 
 const execAsync = promisify(exec);
 
@@ -14,16 +15,7 @@ export interface HostEntry {
 }
 
 export class HostFileService {
-  private static sudoer: Sudoer;
-  
-  private static getSudoer(): Sudoer {
-    if (!this.sudoer) {
-      this.sudoer = new Sudoer({
-        name: 'Local Domain Manager'
-      });
-    }
-    return this.sudoer;
-  }
+  private static readonly appName = 'Local Domain Manager';
 
   private static getHostFilePath(): string {
     if (process.platform === 'win32') {
@@ -157,7 +149,17 @@ export class HostFileService {
   }
 
   private static async writeWithElevatedPrivileges(hostPath: string, content: string, mode: 'write' | 'append'): Promise<void> {
-    const sudoer = this.getSudoer();
+    // Check if already elevated
+    if (isElevated()) {
+      // If already elevated, write directly
+      if (mode === 'append') {
+        await fs.appendFile(hostPath, content);
+      } else {
+        await fs.writeFile(hostPath, content);
+      }
+      return;
+    }
+
     const tmpFile = path.join(os.tmpdir(), `hosts_temp_${Date.now()}`);
     
     // Prepare the temporary file
@@ -180,21 +182,29 @@ export class HostFileService {
         command = `cp "${tmpFile}" "${hostPath}"`;
       }
 
-      // Execute with elevated privileges using electron-sudo
+      // Execute with elevated privileges using @vscode/sudo-prompt
       // This will show native OS authentication dialog
-      const result = await sudoer.exec(command, {
-        env: {
-          // Pass any necessary environment variables
-          PATH: process.env.PATH
-        }
+      await new Promise<void>((resolve, reject) => {
+        const options = {
+          name: this.appName,
+          env: {
+            PATH: process.env.PATH || ''
+          }
+        };
+
+        sudo.exec(command, options, (error, _stdout, stderr) => {
+          if (error) {
+            console.error('Sudo error:', error);
+            reject(error);
+          } else if (stderr && stderr.toString().trim()) {
+            console.error('Sudo stderr:', stderr);
+            reject(new Error(stderr.toString()));
+          } else {
+            console.log('Hosts file updated successfully');
+            resolve();
+          }
+        });
       });
-
-      // Check if the command executed successfully
-      if (result && result.toString().includes('error')) {
-        throw new Error('Failed to update hosts file: ' + result.toString());
-      }
-
-      console.log('Hosts file updated successfully');
 
     } catch (error: any) {
       console.error('Error executing sudo command:', error);
@@ -204,6 +214,8 @@ export class HostFileService {
         throw new Error('Permission denied: User cancelled the authentication dialog');
       } else if (error.message && error.message.includes('cancelled')) {
         throw new Error('Operation cancelled by user');
+      } else if (error.code === 126) {
+        throw new Error('Permission denied: Unable to execute command with elevated privileges');
       } else {
         throw new Error('Failed to update hosts file with elevated privileges: ' + error.message);
       }
@@ -215,19 +227,18 @@ export class HostFileService {
 
   static async flushDNSCache(): Promise<void> {
     const platform = process.platform;
-    const sudoer = this.getSudoer();
     
     try {
       if (platform === 'darwin') {
         // macOS - requires sudo
-        await sudoer.exec('dscacheutil -flushcache');
+        await this.execWithSudo('dscacheutil -flushcache');
       } else if (platform === 'linux') {
         // Try various Linux DNS cache flush commands
         try {
-          await sudoer.exec('systemctl restart systemd-resolved');
+          await this.execWithSudo('systemctl restart systemd-resolved');
         } catch {
           try {
-            await sudoer.exec('service nscd restart');
+            await this.execWithSudo('service nscd restart');
           } catch {
             // Some systems don't have DNS caching
             console.log('DNS cache flush not available on this system');
@@ -241,5 +252,32 @@ export class HostFileService {
       console.error('Error flushing DNS cache:', error);
       // Don't throw - DNS flush is not critical
     }
+  }
+
+  private static async execWithSudo(command: string): Promise<void> {
+    // Check if already elevated
+    if (isElevated()) {
+      await execAsync(command);
+      return;
+    }
+
+    return new Promise<void>((resolve, reject) => {
+      const options = {
+        name: this.appName,
+        env: {
+          PATH: process.env.PATH || ''
+        }
+      };
+
+      sudo.exec(command, options, (error, stdout, stderr) => {
+        if (error) {
+          reject(error);
+        } else if (stderr && stderr.toString().trim()) {
+          reject(new Error(stderr.toString()));
+        } else {
+          resolve();
+        }
+      });
+    });
   }
 }
