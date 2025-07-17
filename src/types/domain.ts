@@ -7,8 +7,13 @@ export interface Domain {
   description?: string;
   category?: string;
   tags?: string;
+  parent_id?: number;
   created_at: string;
   updated_at: string;
+  // For tree view
+  children?: Domain[];
+  level?: number;
+  isExpanded?: boolean;
 }
 
 export interface DomainFormData {
@@ -19,4 +24,11 @@ export interface DomainFormData {
   description?: string;
   category?: string;
   tags?: string;
+  parent_id?: number;
+}
+
+export interface DomainTreeNode extends Domain {
+  children: DomainTreeNode[];
+  level: number;
+  isExpanded: boolean;
 }

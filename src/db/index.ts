@@ -39,7 +39,7 @@ export const initDatabase = () => {
   // Check if we need to migrate the timestamp columns
   try {
     const tableInfo = sqlite.prepare("PRAGMA table_info(domains)").all();
-    const createdAtColumn = tableInfo.find((col: any) => col.name === 'created_at');
+    const createdAtColumn = tableInfo.find((col: any) => col.name === 'created_at') as any;
     
     if (createdAtColumn && createdAtColumn.type === 'TEXT') {
       console.log('Migrating timestamp columns from TEXT to INTEGER...');
@@ -55,6 +55,7 @@ export const initDatabase = () => {
           description TEXT,
           category TEXT,
           tags TEXT,
+          parent_id INTEGER REFERENCES domains(id) ON DELETE CASCADE,
           created_at INTEGER DEFAULT (unixepoch()),
           updated_at INTEGER DEFAULT (unixepoch())
         );
@@ -95,6 +96,20 @@ export const initDatabase = () => {
     console.log('No migration needed or migration skipped:', error);
   }
   
+  // Check if parent_id column exists and add it if not
+  try {
+    const tableInfo = sqlite.prepare("PRAGMA table_info(domains)").all();
+    const hasParentId = tableInfo.some((col: any) => col.name === 'parent_id');
+    
+    if (!hasParentId) {
+      console.log('Adding parent_id column to domains table...');
+      sqlite.exec(`ALTER TABLE domains ADD COLUMN parent_id INTEGER REFERENCES domains(id) ON DELETE CASCADE;`);
+      sqlite.exec(`CREATE INDEX IF NOT EXISTS idx_domain_parent ON domains(parent_id);`);
+    }
+  } catch (error) {
+    console.log('Could not check/add parent_id column:', error);
+  }
+  
   // Initialize tables (this won't recreate existing tables)
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS domains (
@@ -106,12 +121,14 @@ export const initDatabase = () => {
       description TEXT,
       category TEXT,
       tags TEXT,
+      parent_id INTEGER REFERENCES domains(id) ON DELETE CASCADE,
       created_at INTEGER DEFAULT (unixepoch()),
       updated_at INTEGER DEFAULT (unixepoch())
     );
     
     CREATE UNIQUE INDEX IF NOT EXISTS idx_domain_name ON domains(name);
     CREATE INDEX IF NOT EXISTS idx_domain_category ON domains(category);
+    CREATE INDEX IF NOT EXISTS idx_domain_parent ON domains(parent_id);
     
     -- Create trigger to update the updated_at timestamp
     CREATE TRIGGER IF NOT EXISTS update_domains_updated_at

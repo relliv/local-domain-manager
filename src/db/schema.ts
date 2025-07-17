@@ -19,11 +19,13 @@ export const domains = sqliteTable('domains', {
   description: text('description'),
   category: text('category'),
   tags: text('tags'), // JSON array stored as text
+  parentId: integer('parent_id').references(() => domains.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   nameIdx: uniqueIndex('idx_domain_name').on(table.name),
   categoryIdx: index('idx_domain_category').on(table.category),
+  parentIdx: index('idx_domain_parent').on(table.parentId),
 }));
 
 // DNS Records table

@@ -117,4 +117,37 @@ export function setupIpcHandlers() {
       throw error;
     }
   });
+
+  // Get domains as tree structure
+  ipcMain.handle('domain:get-tree', async () => {
+    try {
+      const tree = await DomainService.getDomainsTree();
+      return JSON.parse(JSON.stringify(tree));
+    } catch (error: any) {
+      console.error('Error getting domains tree:', error);
+      throw new Error(error.message || 'Failed to get domains tree');
+    }
+  });
+
+  // Get root domains only
+  ipcMain.handle('domain:get-roots', async () => {
+    try {
+      const roots = await DomainService.getRootDomains();
+      return JSON.parse(JSON.stringify(roots));
+    } catch (error: any) {
+      console.error('Error getting root domains:', error);
+      throw new Error(error.message || 'Failed to get root domains');
+    }
+  });
+
+  // Get subdomains of a parent
+  ipcMain.handle('domain:get-subdomains', async (_, parentId: number) => {
+    try {
+      const subdomains = await DomainService.getSubdomains(parentId);
+      return JSON.parse(JSON.stringify(subdomains));
+    } catch (error: any) {
+      console.error('Error getting subdomains:', error);
+      throw new Error(error.message || 'Failed to get subdomains');
+    }
+  });
 }

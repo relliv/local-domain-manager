@@ -9,6 +9,19 @@
       </DialogHeader>
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div class="space-y-2">
+          <Label htmlFor="edit-parent">Parent Domain (optional)</Label>
+          <select
+            id="edit-parent"
+            v-model="formData.parent_id"
+            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option :value="undefined">None (Root Domain)</option>
+            <option v-for="parent in availableParents" :key="parent.id" :value="parent.id">
+              {{ getIndentedName(parent) }}
+            </option>
+          </select>
+        </div>
+        <div class="space-y-2">
           <Label htmlFor="edit-name">Domain Name</Label>
           <Input
             id="edit-name"
@@ -100,6 +113,7 @@ const emit = defineEmits<{
 
 const open = ref(props.open)
 const isSubmitting = ref(false)
+const availableParents = ref<Domain[]>([])
 
 const formData = ref<DomainFormData>({
   name: '',
@@ -107,7 +121,8 @@ const formData = ref<DomainFormData>({
   is_active: true,
   description: '',
   category: '',
-  tags: ''
+  tags: '',
+  parent_id: undefined
 })
 
 watch(() => props.open, (newVal) => {
@@ -122,14 +137,54 @@ watch(() => props.domain, (newDomain) => {
       is_active: newDomain.is_active,
       description: newDomain.description || '',
       category: newDomain.category || '',
-      tags: newDomain.tags || ''
+      tags: newDomain.tags || '',
+      parent_id: newDomain.parent_id
     }
   }
 })
 
-watch(open, (newVal) => {
+watch(open, async (newVal) => {
   emit('update:open', newVal)
+  if (newVal) {
+    // Load available parent domains when modal opens
+    try {
+      const allDomains = await domainApi.getAllDomains()
+      // Filter out the current domain and its descendants to prevent circular references
+      availableParents.value = allDomains.filter(d => {
+        if (!props.domain) return true
+        if (d.id === props.domain.id) return false
+        // Also filter out any domains that have this domain as a parent (to prevent circular references)
+        let parent = d
+        while (parent.parent_id) {
+          if (parent.parent_id === props.domain.id) return false
+          parent = allDomains.find(p => p.id === parent.parent_id) || parent
+          if (!parent || parent === d) break
+        }
+        return true
+      })
+    } catch (error) {
+      console.error('Failed to load parent domains:', error)
+    }
+  }
 })
+
+// Helper function to get domain level for indentation
+const getDomainLevel = (domain: Domain): number => {
+  let level = 0
+  let current = domain
+  while (current.parent_id) {
+    level++
+    current = availableParents.value.find(d => d.id === current.parent_id) || current
+    if (!current || current === domain) break // Prevent infinite loop
+  }
+  return level
+}
+
+// Helper function to display indented domain names
+const getIndentedName = (domain: Domain): string => {
+  const level = getDomainLevel(domain)
+  return '  '.repeat(level) + domain.name
+}
 
 const handleSubmit = async () => {
   if (!props.domain) return

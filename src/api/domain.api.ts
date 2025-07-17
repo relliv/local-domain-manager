@@ -35,5 +35,17 @@ export const domainApi = {
 
   async syncHostFile(): Promise<{ success: boolean }> {
     return window.ipcRenderer.invoke('host:sync');
+  },
+
+  async getDomainsTree(): Promise<Domain[]> {
+    return window.ipcRenderer.invoke('domain:get-tree');
+  },
+
+  async getRootDomains(): Promise<Domain[]> {
+    return window.ipcRenderer.invoke('domain:get-roots');
+  },
+
+  async getSubdomains(parentId: number): Promise<Domain[]> {
+    return window.ipcRenderer.invoke('domain:get-subdomains', parentId);
   }
 };

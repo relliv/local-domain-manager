@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 import { getDb } from '../index';
 import { domains } from '../schema';
 import type { Domain, DomainFormData } from '@/types/domain';
@@ -60,6 +60,7 @@ function dbToDomain(dbDomain: any): Domain {
     description: dbDomain.description,
     category: dbDomain.category,
     tags: dbDomain.tags,
+    parent_id: dbDomain.parentId,
     created_at: toISOString(dbDomain.createdAt),
     updated_at: toISOString(dbDomain.updatedAt),
   };
@@ -107,6 +108,7 @@ export class DomainService {
       description: data.description,
       category: data.category,
       tags: data.tags,
+      parentId: data.parent_id,
       // Let SQLite handle timestamps with DEFAULT values
     }).returning().get();
 
@@ -140,6 +142,7 @@ export class DomainService {
     if (data.description !== undefined) updateData.description = data.description;
     if (data.category !== undefined) updateData.category = data.category;
     if (data.tags !== undefined) updateData.tags = data.tags;
+    if (data.parent_id !== undefined) updateData.parentId = data.parent_id;
     // SQLite will update the updated_at timestamp automatically
     
     const result = await db.update(domains)
@@ -221,5 +224,57 @@ export class DomainService {
     if (!domain) return undefined;
     
     return this.updateDomain(id, { is_active: !domain.is_active });
+  }
+
+  static async getDomainsTree(): Promise<Domain[]> {
+    const allDomains = await this.getAllDomains();
+    
+    // Build a map for quick lookup
+    const domainMap = new Map<number, Domain>();
+    allDomains.forEach(domain => {
+      domain.children = [];
+      domain.level = 0;
+      domain.isExpanded = true;
+      domainMap.set(domain.id, domain);
+    });
+    
+    // Build the tree structure
+    const rootDomains: Domain[] = [];
+    
+    allDomains.forEach(domain => {
+      if (domain.parent_id) {
+        const parent = domainMap.get(domain.parent_id);
+        if (parent) {
+          parent.children!.push(domain);
+          domain.level = (parent.level || 0) + 1;
+        } else {
+          // Parent not found, treat as root
+          rootDomains.push(domain);
+        }
+      } else {
+        // No parent, it's a root domain
+        rootDomains.push(domain);
+      }
+    });
+    
+    return rootDomains;
+  }
+
+  static async getRootDomains(): Promise<Domain[]> {
+    const db = getDb();
+    const result = await db.select()
+      .from(domains)
+      .where(isNull(domains.parentId))
+      .all();
+    return result.map(dbToDomain);
+  }
+
+  static async getSubdomains(parentId: number): Promise<Domain[]> {
+    const db = getDb();
+    const result = await db.select()
+      .from(domains)
+      .where(eq(domains.parentId, parentId))
+      .all();
+    return result.map(dbToDomain);
   }
 }

@@ -13,63 +13,31 @@
 
     <div class="bg-card rounded-lg shadow-sm border">
       <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="border-b">
-              <th class="text-left p-4">Domain Name</th>
-              <th class="text-left p-4">Port</th>
-              <th class="text-left p-4">Status</th>
-              <th class="text-left p-4">Category</th>
-              <th class="text-left p-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="domain in domains" :key="domain.id" class="border-b hover:bg-muted/50">
-              <td class="p-4 font-medium">{{ domain.name }}</td>
-              <td class="p-4">{{ domain.port || 80 }}</td>
-              <td class="p-4">
-                <span 
-                  :class="[
-                    'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
-                    domain.is_active 
-                      ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' 
-                      : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-                  ]"
-                >
-                  {{ domain.is_active ? 'Active' : 'Inactive' }}
-                </span>
-              </td>
-              <td class="p-4">{{ domain.category || '-' }}</td>
-              <td class="p-4">
-                <div class="flex items-center gap-2">
-                  <Switch
-                    :checked="domain.is_active"
-                    @update:checked="toggleStatus(domain)"
-                  />
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    @click="openEditModal(domain)"
-                  >
-                    <Edit class="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    @click="deleteDomain(domain)"
-                  >
-                    <Trash2 class="w-4 h-4" />
-                  </Button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="domains.length === 0">
-              <td colspan="5" class="p-8 text-center text-muted-foreground">
-                No domains found. Click "Add Domain" to create one.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <!-- Header -->
+        <div class="grid grid-cols-5 gap-4 p-4 border-b font-medium text-sm text-muted-foreground">
+          <div>Domain Name</div>
+          <div>Port</div>
+          <div>Status</div>
+          <div>Category</div>
+          <div class="text-right">Actions</div>
+        </div>
+        
+        <!-- Tree View -->
+        <div v-if="domainTree.length > 0">
+          <DomainTreeItem
+            v-for="domain in domainTree"
+            :key="domain.id"
+            :domain="domain"
+            @toggle-status="toggleStatus"
+            @edit="openEditModal"
+            @delete="deleteDomain"
+          />
+        </div>
+        
+        <!-- Empty State -->
+        <div v-else class="p-8 text-center text-muted-foreground">
+          No domains found. Click "Add Domain" to create one.
+        </div>
       </div>
     </div>
 
@@ -90,23 +58,23 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Plus, Edit, Trash2 } from 'lucide-vue-next'
+import { Plus } from 'lucide-vue-next'
 import Button from '@/components/ui/button.vue'
-import Switch from '@/components/ui/switch.vue'
 import ThemeToggle from './ThemeToggle.vue'
 import AddDomainModal from './AddDomainModal.vue'
 import EditDomainModal from './EditDomainModal.vue'
+import DomainTreeItem from './DomainTreeItem.vue'
 import { domainApi } from '@/api/domain.api'
 import type { Domain } from '@/types/domain'
 
-const domains = ref<Domain[]>([])
+const domainTree = ref<Domain[]>([])
 const isAddModalOpen = ref(false)
 const isEditModalOpen = ref(false)
 const selectedDomain = ref<Domain | null>(null)
 
 const loadDomains = async () => {
   try {
-    domains.value = await domainApi.getAllDomains()
+    domainTree.value = await domainApi.getDomainsTree()
   } catch (error) {
     console.error('Failed to load domains:', error)
   }
@@ -122,24 +90,21 @@ const openEditModal = (domain: Domain) => {
 }
 
 const handleDomainAdded = (domain: Domain) => {
-  domains.value.push(domain)
+  // Reload the tree to show the new domain in the correct position
+  loadDomains()
 }
 
 const handleDomainUpdated = (updatedDomain: Domain) => {
-  const index = domains.value.findIndex(d => d.id === updatedDomain.id)
-  if (index !== -1) {
-    domains.value[index] = updatedDomain
-  }
+  // Reload the tree to reflect the updates
+  loadDomains()
 }
 
 const toggleStatus = async (domain: Domain) => {
   try {
     const updated = await domainApi.toggleDomainStatus(domain.id)
     if (updated) {
-      const index = domains.value.findIndex(d => d.id === domain.id)
-      if (index !== -1) {
-        domains.value[index] = updated
-      }
+      // Reload the tree to reflect the status change
+      loadDomains()
     }
   } catch (error: any) {
     console.error('Failed to toggle domain status:', error)
@@ -156,7 +121,8 @@ const deleteDomain = async (domain: Domain) => {
     try {
       const success = await domainApi.deleteDomain(domain.id)
       if (success) {
-        domains.value = domains.value.filter(d => d.id !== domain.id)
+        // Reload the tree to reflect the deletion
+        loadDomains()
       }
     } catch (error) {
       console.error('Failed to delete domain:', error)
