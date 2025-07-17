@@ -261,11 +261,44 @@ export class NginxHelper {
   /**
    * Test nginx configuration
    */
-  static async testNginxConfig(): Promise<{ valid: boolean; error?: string }> {
+  static async testNginxConfig(): Promise<{ valid: boolean; error?: string; message?: string }> {
     try {
       const { stdout, stderr } = await execAsync('nginx -t');
-      return { valid: true };
+      // nginx -t outputs to stderr even on success
+      const output = stderr || stdout;
+      return { 
+        valid: true,
+        message: output
+      };
     } catch (error: any) {
+      // Check if it's a permission error
+      if (error.code === 'EACCES' || 
+          error.stderr?.includes('Permission denied') ||
+          error.message?.includes('Permission denied')) {
+        try {
+          // Try with sudo
+          const { stdout, stderr } = await this.execWithSudoCapture('nginx -t');
+          const output = stderr || stdout;
+          return { 
+            valid: true,
+            message: output
+          };
+        } catch (sudoError: any) {
+          // If user cancelled sudo prompt
+          if (sudoError.message?.includes('User did not grant permission') || 
+              sudoError.message?.includes('cancelled')) {
+            return {
+              valid: false,
+              error: 'Permission denied. Configuration test requires elevated privileges.'
+            };
+          }
+          return { 
+            valid: false, 
+            error: sudoError.stderr || sudoError.message 
+          };
+        }
+      }
+      
       return { 
         valid: false, 
         error: error.stderr || error.message 
@@ -376,6 +409,36 @@ export class NginxHelper {
           reject(new Error(stderr.toString()));
         } else {
           resolve();
+        }
+      });
+    });
+  }
+
+  /**
+   * Execute command with sudo and capture output
+   */
+  private static async execWithSudoCapture(command: string): Promise<{ stdout: string; stderr: string }> {
+    // Check if already elevated
+    if (isElevated()) {
+      return await execAsync(command);
+    }
+
+    return new Promise((resolve, reject) => {
+      const options = {
+        name: this.appName,
+        env: {
+          PATH: process.env.PATH || ''
+        }
+      };
+
+      sudo.exec(command, options, (error, stdout, stderr) => {
+        if (error) {
+          reject({ ...error, stdout: stdout?.toString() || '', stderr: stderr?.toString() || '' });
+        } else {
+          resolve({ 
+            stdout: stdout?.toString() || '', 
+            stderr: stderr?.toString() || '' 
+          });
         }
       });
     });

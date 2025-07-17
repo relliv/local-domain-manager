@@ -44,10 +44,11 @@
             </Button>
           </div>
 
-          <Alert v-if="nginxStatus" :class="nginxStatus.success ? '' : 'border-destructive'">
-            <AlertCircle class="h-4 w-4" />
+          <Alert v-if="nginxStatus" :class="nginxStatus.success ? 'border-green-500' : 'border-destructive'">
+            <CheckCircle2 v-if="nginxStatus.success" class="h-4 w-4 text-green-500" />
+            <AlertCircle v-else class="h-4 w-4" />
             <AlertTitle>{{ nginxStatus.success ? 'Success' : 'Error' }}</AlertTitle>
-            <AlertDescription class="whitespace-pre-line">{{ nginxStatus.message }}</AlertDescription>
+            <AlertDescription class="whitespace-pre-line font-mono text-sm">{{ nginxStatus.message }}</AlertDescription>
           </Alert>
         </CardContent>
       </Card>
@@ -291,14 +292,48 @@ const testNginxConfig = async () => {
   
   try {
     const result = await nginxApi.testConfig();
-    nginxStatus.value = {
-      success: result.valid,
-      message: result.message || 'Configuration is valid'
-    };
+    if (result.valid) {
+      let message = '✓ Nginx configuration is valid\n\n';
+      if (result.message) {
+        // Clean up the nginx test output
+        message += result.message.replace(/nginx: /g, '')
+                                .replace(/test is successful/g, 'Test successful')
+                                .trim();
+      } else {
+        message += 'Configuration test passed successfully.';
+      }
+      nginxStatus.value = {
+        success: true,
+        message
+      };
+    } else {
+      // Parse the error message to make it more readable
+      let errorMessage = result.error || 'Configuration test failed';
+      
+      // Check for common issues
+      if (errorMessage.includes('Permission denied')) {
+        errorMessage = 'Permission denied. Try running the test with elevated privileges:\n\n' +
+                       '• macOS/Linux: sudo nginx -t\n' +
+                       '• Windows: Run as administrator';
+      } else if (errorMessage.includes('nginx: command not found')) {
+        errorMessage = 'Nginx is not installed or not in PATH.\n\n' +
+                       'Please install nginx or add it to your system PATH.';
+      } else {
+        // Clean up nginx test output
+        errorMessage = errorMessage.replace(/nginx: \[emerg\]/g, 'Error:')
+                                 .replace(/nginx: configuration file .* test failed/g, '')
+                                 .trim();
+      }
+      
+      nginxStatus.value = {
+        success: false,
+        message: `✗ Nginx configuration is invalid\n\n${errorMessage}`
+      };
+    }
   } catch (error: any) {
     nginxStatus.value = {
       success: false,
-      message: error.message || 'Failed to test configuration'
+      message: `Failed to test configuration: ${error.message}`
     };
   } finally {
     testing.value = false;
