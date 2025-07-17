@@ -31,6 +31,7 @@
             @toggle-status="toggleStatus"
             @edit="openEditModal"
             @delete="deleteDomain"
+            @manage-proxy="openReverseProxyModal"
           />
         </div>
         
@@ -53,6 +54,13 @@
       :domain="selectedDomain"
       @domain-updated="handleDomainUpdated"
     />
+
+    <!-- Reverse Proxy Modal -->
+    <ReverseProxyModal
+      v-model:open="isReverseProxyModalOpen"
+      :domain="selectedDomain"
+      @proxy-updated="handleProxyUpdated"
+    />
   </div>
 </template>
 
@@ -64,12 +72,14 @@ import ThemeToggle from './ThemeToggle.vue'
 import AddDomainModal from './AddDomainModal.vue'
 import EditDomainModal from './EditDomainModal.vue'
 import DomainTreeItem from './DomainTreeItem.vue'
+import ReverseProxyModal from './ReverseProxyModal.vue'
 import { domainApi } from '@/api/domain.api'
 import type { Domain } from '@/types/domain'
 
 const domainTree = ref<Domain[]>([])
 const isAddModalOpen = ref(false)
 const isEditModalOpen = ref(false)
+const isReverseProxyModalOpen = ref(false)
 const selectedDomain = ref<Domain | null>(null)
 
 const loadDomains = async () => {
@@ -128,6 +138,16 @@ const deleteDomain = async (domain: Domain) => {
       console.error('Failed to delete domain:', error)
     }
   }
+}
+
+const openReverseProxyModal = (domain: Domain) => {
+  selectedDomain.value = domain
+  isReverseProxyModalOpen.value = true
+}
+
+const handleProxyUpdated = () => {
+  // Reload domains to reflect any changes
+  loadDomains()
 }
 
 onMounted(() => {

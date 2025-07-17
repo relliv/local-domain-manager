@@ -84,6 +84,35 @@ export const sslCertificates = sqliteTable('ssl_certificates', {
   domainIdx: index('idx_ssl_domain').on(table.domainId),
 }));
 
+// Settings table
+export const settings = sqliteTable('settings', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  key: text('key').notNull().unique(),
+  value: text('value').notNull(),
+  description: text('description'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  keyIdx: uniqueIndex('idx_settings_key').on(table.key),
+}));
+
+// Reverse Proxy Configurations table
+export const reverseProxyConfigs = sqliteTable('reverse_proxy_configs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  domainId: integer('domain_id').notNull().references(() => domains.id, { onDelete: 'cascade' }),
+  proxyPass: text('proxy_pass').notNull(), // e.g., http://localhost:3000
+  proxyHost: text('proxy_host'), // e.g., $host
+  proxyHeaders: text('proxy_headers'), // JSON object for additional headers
+  websocketSupport: integer('websocket_support', { mode: 'boolean' }).default(false),
+  cacheEnabled: integer('cache_enabled', { mode: 'boolean' }).default(false),
+  customConfig: text('custom_config'), // Additional nginx directives
+  isActive: integer('is_active', { mode: 'boolean' }).default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  domainIdx: index('idx_reverse_proxy_domain').on(table.domainId),
+}));
+
 // Type exports
 export type Domain = typeof domains.$inferSelect;
 export type NewDomain = typeof domains.$inferInsert;
@@ -95,3 +124,7 @@ export type AnalyticsData = typeof analyticsData.$inferSelect;
 export type NewAnalyticsData = typeof analyticsData.$inferInsert;
 export type SslCertificate = typeof sslCertificates.$inferSelect;
 export type NewSslCertificate = typeof sslCertificates.$inferInsert;
+export type Settings = typeof settings.$inferSelect;
+export type NewSettings = typeof settings.$inferInsert;
+export type ReverseProxyConfig = typeof reverseProxyConfigs.$inferSelect;
+export type NewReverseProxyConfig = typeof reverseProxyConfigs.$inferInsert;

@@ -3,6 +3,8 @@ import { getDb } from '../index';
 import { domains } from '../schema';
 import type { Domain, DomainFormData } from '@/types/domain';
 import { HostFileService } from '../../../electron/main/host-file.service';
+import { SettingsService } from './settings.service';
+import { NginxConfigService } from '../../../electron/main/nginx-config.service';
 
 // Helper to convert from DB format to Domain format
 function dbToDomain(dbDomain: any): Domain {
@@ -117,6 +119,20 @@ export class DomainService {
       try {
         await HostFileService.addHostEntry(result.ipAddress, result.name, result.description || undefined);
         await HostFileService.flushDNSCache();
+        
+        // Create nginx config for root domains
+        if (!data.parent_id) {
+          const nginxPath = await SettingsService.getNginxPath();
+          if (nginxPath) {
+            try {
+              const domain = dbToDomain(result);
+              await NginxConfigService.createOrUpdateDomainConfig(domain);
+            } catch (nginxError) {
+              console.error('Failed to create nginx config:', nginxError);
+              // Don't fail the domain creation if nginx config fails
+            }
+          }
+        }
       } catch (error: any) {
         // If host file update fails, remove from database
         await db.delete(domains).where(eq(domains.id, result.id)).run();

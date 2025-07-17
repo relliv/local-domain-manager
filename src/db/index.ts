@@ -137,6 +137,35 @@ export const initDatabase = () => {
     BEGIN
       UPDATE domains SET updated_at = unixepoch() WHERE id = NEW.id;
     END;
+    
+    -- Settings table
+    CREATE TABLE IF NOT EXISTS settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT NOT NULL UNIQUE,
+      value TEXT NOT NULL,
+      description TEXT,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_at INTEGER DEFAULT (unixepoch())
+    );
+    
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_settings_key ON settings(key);
+    
+    -- Reverse proxy configurations table
+    CREATE TABLE IF NOT EXISTS reverse_proxy_configs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      domain_id INTEGER NOT NULL REFERENCES domains(id) ON DELETE CASCADE,
+      proxy_pass TEXT NOT NULL,
+      proxy_host TEXT,
+      proxy_headers TEXT,
+      websocket_support INTEGER DEFAULT 0,
+      cache_enabled INTEGER DEFAULT 0,
+      custom_config TEXT,
+      is_active INTEGER DEFAULT 1,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_at INTEGER DEFAULT (unixepoch())
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_reverse_proxy_domain ON reverse_proxy_configs(domain_id);
   `);
   
   console.log('Database initialized successfully');

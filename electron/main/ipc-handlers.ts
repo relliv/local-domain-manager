@@ -1,8 +1,13 @@
-import { ipcMain } from 'electron';
+import { ipcMain, dialog, BrowserWindow } from 'electron';
 import { DomainService } from '../../src/db/services/domain.service';
 import { HostFileService } from './host-file.service';
 import { PermissionHelper } from './permission-helper';
+import { SettingsService } from '../../src/db/services/settings.service';
+import { ReverseProxyService } from '../../src/db/services/reverse-proxy.service';
+import { NginxHelper } from './nginx-helper';
+import { NginxConfigService } from './nginx-config.service';
 import type { DomainFormData } from '../../src/types/domain';
+import type { ReverseProxyFormData } from '../../src/db/services/reverse-proxy.service';
 
 export function setupIpcHandlers() {
   // Get all domains
@@ -149,5 +154,149 @@ export function setupIpcHandlers() {
       console.error('Error getting subdomains:', error);
       throw new Error(error.message || 'Failed to get subdomains');
     }
+  });
+
+  // Settings handlers
+  ipcMain.handle('settings:get', async (_, key: string) => {
+    try {
+      return await SettingsService.getSetting(key);
+    } catch (error: any) {
+      console.error('Error getting setting:', error);
+      throw new Error(error.message || 'Failed to get setting');
+    }
+  });
+
+  ipcMain.handle('settings:set', async (_, key: string, value: string, description?: string) => {
+    try {
+      const result = await SettingsService.setSetting(key, value, description);
+      return JSON.parse(JSON.stringify(result));
+    } catch (error: any) {
+      console.error('Error setting value:', error);
+      throw new Error(error.message || 'Failed to set setting');
+    }
+  });
+
+  ipcMain.handle('settings:get-all', async () => {
+    try {
+      const settings = await SettingsService.getAllSettings();
+      return JSON.parse(JSON.stringify(settings));
+    } catch (error: any) {
+      console.error('Error getting settings:', error);
+      throw new Error(error.message || 'Failed to get settings');
+    }
+  });
+
+  ipcMain.handle('settings:is-initial-setup-complete', async () => {
+    try {
+      return await SettingsService.isInitialSetupComplete();
+    } catch (error: any) {
+      console.error('Error checking setup status:', error);
+      throw new Error(error.message || 'Failed to check setup status');
+    }
+  });
+
+  // Nginx handlers
+  ipcMain.handle('nginx:detect-path', async () => {
+    try {
+      return await NginxHelper.detectNginxPath();
+    } catch (error: any) {
+      console.error('Error detecting nginx path:', error);
+      throw new Error(error.message || 'Failed to detect nginx path');
+    }
+  });
+
+  ipcMain.handle('nginx:is-installed', async () => {
+    try {
+      return await NginxHelper.isNginxInstalled();
+    } catch (error: any) {
+      console.error('Error checking nginx installation:', error);
+      throw new Error(error.message || 'Failed to check nginx installation');
+    }
+  });
+
+  ipcMain.handle('nginx:test-config', async () => {
+    try {
+      return await NginxHelper.testNginxConfig();
+    } catch (error: any) {
+      console.error('Error testing nginx config:', error);
+      throw new Error(error.message || 'Failed to test nginx config');
+    }
+  });
+
+  ipcMain.handle('nginx:reload', async () => {
+    try {
+      await NginxHelper.reloadNginx();
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error reloading nginx:', error);
+      throw new Error(error.message || 'Failed to reload nginx');
+    }
+  });
+
+  ipcMain.handle('nginx:sync-all', async () => {
+    try {
+      return await NginxConfigService.syncAllDomains();
+    } catch (error: any) {
+      console.error('Error syncing nginx configs:', error);
+      throw new Error(error.message || 'Failed to sync nginx configs');
+    }
+  });
+
+  // Reverse proxy handlers
+  ipcMain.handle('reverse-proxy:get', async (_, domainId: number) => {
+    try {
+      const config = await ReverseProxyService.getByDomainId(domainId);
+      return config ? JSON.parse(JSON.stringify(config)) : null;
+    } catch (error: any) {
+      console.error('Error getting reverse proxy config:', error);
+      throw new Error(error.message || 'Failed to get reverse proxy config');
+    }
+  });
+
+  ipcMain.handle('reverse-proxy:save', async (_, data: ReverseProxyFormData) => {
+    try {
+      const result = await ReverseProxyService.saveReverseProxy(data);
+      
+      // Update nginx config if domain is active
+      const domain = await DomainService.getDomainById(data.domainId);
+      if (domain && domain.is_active && !domain.parent_id) {
+        await NginxConfigService.createOrUpdateDomainConfig(domain);
+      }
+      
+      return JSON.parse(JSON.stringify(result));
+    } catch (error: any) {
+      console.error('Error saving reverse proxy config:', error);
+      throw new Error(error.message || 'Failed to save reverse proxy config');
+    }
+  });
+
+  ipcMain.handle('reverse-proxy:delete', async (_, domainId: number) => {
+    try {
+      const success = await ReverseProxyService.deleteByDomainId(domainId);
+      
+      // Update nginx config if domain is active
+      const domain = await DomainService.getDomainById(domainId);
+      if (domain && domain.is_active && !domain.parent_id) {
+        await NginxConfigService.createOrUpdateDomainConfig(domain);
+      }
+      
+      return success;
+    } catch (error: any) {
+      console.error('Error deleting reverse proxy config:', error);
+      throw new Error(error.message || 'Failed to delete reverse proxy config');
+    }
+  });
+
+  // Show folder picker dialog
+  ipcMain.handle('dialog:select-folder', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory'],
+      title: 'Select Nginx Configuration Directory'
+    });
+    
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    return null;
   });
 }

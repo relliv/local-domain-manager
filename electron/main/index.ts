@@ -5,6 +5,8 @@ import path from 'node:path'
 import os from 'node:os'
 import { initDatabase } from '../../src/db/index'
 import { setupIpcHandlers } from './ipc-handlers'
+import { SettingsService } from '../../src/db/services/settings.service'
+import { NginxHelper } from './nginx-helper'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -89,11 +91,23 @@ app.whenReady().then(async () => {
   // Initialize database
   initDatabase()
   
+  // Initialize default settings
+  await SettingsService.initializeDefaults()
+  
   // Setup IPC handlers
   setupIpcHandlers()
   
   // Create window
   createWindow()
+  
+  // Check for nginx setup after window is ready
+  win?.webContents.once('did-finish-load', async () => {
+    const isSetupComplete = await SettingsService.isInitialSetupComplete()
+    if (!isSetupComplete) {
+      // Send event to renderer to show nginx setup
+      win?.webContents.send('show-nginx-setup')
+    }
+  })
 })
 
 app.on('window-all-closed', () => {

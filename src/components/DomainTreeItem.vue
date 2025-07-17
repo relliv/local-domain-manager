@@ -38,6 +38,15 @@
               @update:checked="$emit('toggle-status', domain)"
             />
             <Button 
+              v-if="!domain.parent_id"
+              variant="ghost" 
+              size="icon"
+              @click="$emit('manage-proxy', domain)"
+              title="Manage Reverse Proxy"
+            >
+              <Server class="w-4 h-4" />
+            </Button>
+            <Button 
               variant="ghost" 
               size="icon"
               @click="$emit('edit', domain)"
@@ -64,6 +73,7 @@
         @toggle-status="$emit('toggle-status', $event)"
         @edit="$emit('edit', $event)"
         @delete="$emit('delete', $event)"
+        @manage-proxy="$emit('manage-proxy', $event)"
       />
     </div>
   </div>
@@ -71,7 +81,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ChevronRight, ChevronDown, Edit, Trash2 } from 'lucide-vue-next'
+import { ChevronRight, ChevronDown, Edit, Trash2, Server } from 'lucide-vue-next'
 import Button from '@/components/ui/button.vue'
 import Switch from '@/components/ui/switch.vue'
 import type { Domain } from '@/types/domain'
@@ -85,6 +95,7 @@ const emit = defineEmits<{
   'toggle-status': [domain: Domain]
   'edit': [domain: Domain]
   'delete': [domain: Domain]
+  'manage-proxy': [domain: Domain]
 }>()
 
 const isExpanded = ref(props.domain.isExpanded ?? true)
