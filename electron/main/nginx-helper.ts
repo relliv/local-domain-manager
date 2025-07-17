@@ -198,9 +198,25 @@ export class NginxHelper {
         // macOS - Try nginx reload command
         try {
           await execAsync('nginx -s reload');
-        } catch {
+        } catch (error: any) {
+          // Check if nginx is running
+          try {
+            await execAsync('pgrep nginx');
+          } catch {
+            throw new Error('Nginx is not running. Please start nginx first.');
+          }
+          
           // If that fails, try with sudo
-          await this.execWithSudo('nginx -s reload');
+          try {
+            await this.execWithSudo('nginx -s reload');
+          } catch (sudoError: any) {
+            // If user cancelled sudo prompt
+            if (sudoError.message?.includes('User did not grant permission') || 
+                sudoError.message?.includes('cancelled')) {
+              throw new Error('Permission denied. Please reload nginx manually.');
+            }
+            throw sudoError;
+          }
         }
       } else if (platform === 'linux') {
         // Linux - Try systemctl first
@@ -210,17 +226,34 @@ export class NginxHelper {
           // Try with sudo
           try {
             await this.execWithSudo('systemctl reload nginx');
-          } catch {
+          } catch (error: any) {
+            // If user cancelled sudo prompt
+            if (error.message?.includes('User did not grant permission') || 
+                error.message?.includes('cancelled')) {
+              throw new Error('Permission denied. Please reload nginx manually.');
+            }
             // Try service command
-            await this.execWithSudo('service nginx reload');
+            try {
+              await this.execWithSudo('service nginx reload');
+            } catch {
+              throw new Error('Failed to reload nginx. Please reload it manually.');
+            }
           }
         }
       } else if (platform === 'win32') {
         // Windows - nginx reload
-        await execAsync('nginx -s reload');
+        try {
+          await execAsync('nginx -s reload');
+        } catch (error: any) {
+          throw new Error('Failed to reload nginx. Please run "nginx -s reload" as administrator.');
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error reloading nginx:', error);
+      // Re-throw with the original message if it's already a custom error
+      if (error.message?.includes('Please')) {
+        throw error;
+      }
       throw new Error('Failed to reload nginx. Please reload it manually.');
     }
   }

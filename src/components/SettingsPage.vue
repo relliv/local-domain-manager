@@ -44,10 +44,10 @@
             </Button>
           </div>
 
-          <Alert v-if="nginxStatus">
+          <Alert v-if="nginxStatus" :class="nginxStatus.success ? '' : 'border-destructive'">
             <AlertCircle class="h-4 w-4" />
             <AlertTitle>{{ nginxStatus.success ? 'Success' : 'Error' }}</AlertTitle>
-            <AlertDescription>{{ nginxStatus.message }}</AlertDescription>
+            <AlertDescription class="whitespace-pre-line">{{ nginxStatus.message }}</AlertDescription>
           </Alert>
         </CardContent>
       </Card>
@@ -316,9 +316,15 @@ const reloadNginx = async () => {
       message: 'Nginx reloaded successfully'
     };
   } catch (error: any) {
+    // Check if it's a permission error
+    const errorMessage = error.message || 'Failed to reload nginx';
+    const isPermissionError = errorMessage.includes('Please reload it manually');
+    
     nginxStatus.value = {
       success: false,
-      message: error.message || 'Failed to reload nginx'
+      message: isPermissionError 
+        ? `${errorMessage}\n\nYou can reload nginx manually using:\n• macOS/Linux: sudo nginx -s reload\n• Windows: nginx -s reload`
+        : errorMessage
     };
   } finally {
     reloading.value = false;
