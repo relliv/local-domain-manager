@@ -1,13 +1,13 @@
 <template>
   <div class="min-h-screen bg-background">
     <NginxSetupModal v-if="showNginxSetup" @setup-complete="onNginxSetupComplete" />
-    <DomainManager v-else />
+    <AppLayout v-else />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import DomainManager from "./components/DomainManager.vue";
+import AppLayout from "./components/AppLayout.vue";
 import NginxSetupModal from "./components/NginxSetupModal.vue";
 import { settingsApi } from './api/settings.api';
 
