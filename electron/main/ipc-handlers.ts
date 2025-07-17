@@ -299,4 +299,9 @@ export function setupIpcHandlers() {
     }
     return null;
   });
+
+  // Get platform information
+  ipcMain.handle('system:get-platform', () => {
+    return process.platform;
+  });
 }

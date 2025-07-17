@@ -89,6 +89,7 @@ import AlertTitle from '@/components/ui/alert-title.vue';
 import AlertDescription from '@/components/ui/alert-description.vue';
 import { nginxApi } from '@/api/nginx.api';
 import { settingsApi } from '@/api/settings.api';
+import { systemApi } from '@/api/system.api';
 
 const emit = defineEmits<{
   'setup-complete': []
@@ -99,9 +100,10 @@ const nginxPath = ref('');
 const detectedPath = ref('');
 const error = ref('');
 const saving = ref(false);
-const platform = ref(process.platform);
+const platform = ref('');
 
 onMounted(async () => {
+  platform.value = await systemApi.getPlatform();
   await checkNginx();
 });
 
