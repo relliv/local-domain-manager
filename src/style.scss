@@ -70,7 +70,12 @@
   -webkit-text-size-adjust: 100%;
 }
 
+html, body, #app {
+  width: 100%;
+}
+
 body {
+  width: 100%;
   margin: 0;
   display: flex;
   place-items: center;
@@ -91,11 +96,3 @@ code {
 .card {
   padding: 2em;
 }
-
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-
