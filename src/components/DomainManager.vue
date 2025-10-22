@@ -10,13 +10,13 @@
     <div class="bg-card rounded-lg shadow-sm border">
       <div class="overflow-x-auto">
         <!-- Header -->
-        <div class="grid grid-cols-6 gap-4 p-4 border-b font-medium text-sm text-muted-foreground">
-          <div>Domain Name</div>
-          <div>Port</div>
-          <div>Status</div>
-          <div>Category</div>
-          <div class="text-center">Active</div>
-          <div class="text-right">Actions</div>
+        <div class="grid grid-cols-6 gap-4 px-4 py-2 border-b font-medium text-sm text-muted-foreground">
+          <div class="ml-4 flex items-center gap-2">Domain Name</div>
+          <div class="ml-4">Port</div>
+          <div class="ml-5">Status</div>
+          <div class="ml-4">Category</div>
+          <div class="ml-6 flex items-center justify-center">Active</div>
+          <div class="ml-4 flex items-center justify-end pr-2">Actions</div>
         </div>
         
         <!-- Tree View -->
