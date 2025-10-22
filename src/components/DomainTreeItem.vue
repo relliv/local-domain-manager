@@ -3,7 +3,10 @@
     <div 
       class="domain-row"
       :style="{ paddingLeft: `${(domain.level || 0) * 24 + 8}px` }"
-      :class="{ 'hover:bg-muted/50': true }"
+      :class="{ 
+        'hover:bg-muted/50': true,
+        'bg-muted/30': domain.parent_id
+      }"
     >
       <div class="flex items-center gap-2 flex-1">
         <button
