@@ -21,5 +21,9 @@ export const nginxApi = {
 
   async selectFolder(): Promise<string | null> {
     return window.ipcRenderer.invoke('dialog:select-folder');
+  },
+
+  async openFolder(folderPath: string): Promise<void> {
+    return window.ipcRenderer.invoke('shell:open-path', folderPath);
   }
 };

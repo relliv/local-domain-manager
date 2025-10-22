@@ -42,6 +42,10 @@
               <RefreshCw class="w-4 h-4 mr-2" :class="{ 'animate-spin': reloading }" />
               {{ reloading ? 'Reloading...' : 'Reload Nginx' }}
             </Button>
+            <Button @click="openNginxFolder" :disabled="!nginxPath" variant="outline">
+              <FolderOpen class="w-4 h-4 mr-2" />
+              Open Folder
+            </Button>
           </div>
 
           <Alert v-if="nginxStatus" :class="nginxStatus.success ? 'border-green-500' : 'border-destructive'">
@@ -187,7 +191,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { AlertCircle, CheckCircle2, RefreshCw } from 'lucide-vue-next';
+import { AlertCircle, CheckCircle2, RefreshCw, FolderOpen } from 'lucide-vue-next';
 import Card from '@/components/ui/card.vue';
 import CardHeader from '@/components/ui/card-header.vue';
 import CardTitle from '@/components/ui/card-title.vue';
@@ -363,6 +367,17 @@ const reloadNginx = async () => {
     };
   } finally {
     reloading.value = false;
+  }
+};
+
+const openNginxFolder = async () => {
+  try {
+    await nginxApi.openFolder(nginxPath.value);
+  } catch (error: any) {
+    nginxStatus.value = {
+      success: false,
+      message: `Failed to open folder: ${error.message}`
+    };
   }
 };
 

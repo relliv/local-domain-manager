@@ -315,4 +315,15 @@ export function setupIpcHandlers() {
       throw new Error(error.message || 'Failed to open URL');
     }
   });
+
+  // Open folder in file explorer
+  ipcMain.handle('shell:open-path', async (_, folderPath: string) => {
+    try {
+      await shell.openPath(folderPath);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error opening folder:', error);
+      throw new Error(error.message || 'Failed to open folder');
+    }
+  });
 }
