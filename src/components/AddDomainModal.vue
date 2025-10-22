@@ -197,18 +197,6 @@ watch(() => formData.value.is_active, (isActive) => {
   }
 })
 
-// Helper function to get domain level for indentation
-const getDomainLevel = (domain: Domain): number => {
-  let level = 0
-  let current = domain
-  while (current.parent_id) {
-    level++
-    current = availableParents.value.find(d => d.id === current.parent_id) || current
-    if (!current || current === domain) break // Prevent infinite loop
-  }
-  return level
-}
-
 const handleSubmit = async () => {
   isSubmitting.value = true
   hostWarning.value = ''
