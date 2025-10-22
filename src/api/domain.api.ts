@@ -1,5 +1,10 @@
 import type { Domain, DomainFormData } from '@/types/domain';
 
+// Serialize data to ensure it's IPC-safe (removes non-serializable objects)
+const serializeData = <T>(data: T): T => {
+  return JSON.parse(JSON.stringify(data));
+};
+
 export const domainApi = {
   async getAllDomains(): Promise<Domain[]> {
     return window.ipcRenderer.invoke('domain:get-all');
@@ -10,15 +15,11 @@ export const domainApi = {
   },
 
   async createDomain(data: DomainFormData): Promise<Domain> {
-    // Serialize data to ensure it's IPC-safe (removes non-serializable objects)
-    const serializedData = JSON.parse(JSON.stringify(data));
-    return window.ipcRenderer.invoke('domain:create', serializedData);
+    return window.ipcRenderer.invoke('domain:create', serializeData(data));
   },
 
   async updateDomain(id: number, data: Partial<DomainFormData>): Promise<Domain | undefined> {
-    // Serialize data to ensure it's IPC-safe (removes non-serializable objects)
-    const serializedData = JSON.parse(JSON.stringify(data));
-    return window.ipcRenderer.invoke('domain:update', id, serializedData);
+    return window.ipcRenderer.invoke('domain:update', id, serializeData(data));
   },
 
   async deleteDomain(id: number): Promise<boolean> {
