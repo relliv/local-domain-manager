@@ -19,7 +19,7 @@
         </button>
         <div v-else class="w-4"></div>
         
-        <div class="flex-1 grid grid-cols-5 gap-4 items-center py-2">
+        <div class="flex-1 grid grid-cols-6 gap-4 items-center py-2">
           <div class="flex items-center gap-2">
             <Globe v-if="!domain.parent_id" class="w-4 h-4 text-muted-foreground flex-shrink-0" />
             <Link2 v-else class="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -44,11 +44,13 @@
             </span>
           </div>
           <div class="text-sm text-muted-foreground">{{ domain.category || '-' }}</div>
-          <div class="flex items-center gap-2 justify-end pr-2">
+          <div class="flex items-center justify-center">
             <Switch
               :checked="domain.is_active"
               @update:checked="$emit('toggle-status', domain)"
             />
+          </div>
+          <div class="flex items-center gap-2 justify-end pr-2">
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
                 <Button variant="ghost" size="icon">
