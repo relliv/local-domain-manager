@@ -44,34 +44,35 @@
             </span>
           </div>
           <div class="text-sm text-muted-foreground">{{ domain.category || '-' }}</div>
-          <div class="flex items-center gap-2 justify-end">
+          <div class="flex items-center gap-2 justify-end pr-2">
             <Switch
               :checked="domain.is_active"
               @update:checked="$emit('toggle-status', domain)"
             />
-            <Button 
-              v-if="!domain.parent_id"
-              variant="ghost" 
-              size="icon"
-              @click="$emit('manage-proxy', domain)"
-              title="Manage Reverse Proxy"
-            >
-              <Server class="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              @click="$emit('edit', domain)"
-            >
-              <Edit class="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              @click="$emit('delete', domain)"
-            >
-              <Trash2 class="w-4 h-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical class="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem 
+                  v-if="!domain.parent_id"
+                  @click="$emit('manage-proxy', domain)"
+                >
+                  <Server class="w-4 h-4 mr-2" />
+                  <span>Manage Proxy</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="$emit('edit', domain)">
+                  <Edit class="w-4 h-4 mr-2" />
+                  <span>Edit</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="$emit('delete', domain)">
+                  <Trash2 class="w-4 h-4 mr-2" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -93,9 +94,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ChevronRight, ChevronDown, Edit, Trash2, Server, Globe, Link2 } from 'lucide-vue-next'
+import { ChevronRight, ChevronDown, Edit, Trash2, Server, Globe, Link2, MoreVertical } from 'lucide-vue-next'
 import Button from '@/components/ui/button.vue'
 import Switch from '@/components/ui/switch.vue'
+import DropdownMenu from '@/components/ui/dropdown-menu.vue'
+import DropdownMenuTrigger from '@/components/ui/dropdown-menu-trigger.vue'
+import DropdownMenuContent from '@/components/ui/dropdown-menu-content.vue'
+import DropdownMenuItem from '@/components/ui/dropdown-menu-item.vue'
 import type { Domain } from '@/types/domain'
 
 interface Props {
