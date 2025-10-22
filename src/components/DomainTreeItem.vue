@@ -17,7 +17,11 @@
         <div v-else class="w-4"></div>
         
         <div class="flex-1 grid grid-cols-5 gap-4 items-center py-2">
-          <div class="font-medium">{{ domain.name }}</div>
+          <div class="flex items-center gap-2">
+            <Globe v-if="!domain.parent_id" class="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <Link2 v-else class="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <div class="font-medium">{{ domain.name }}</div>
+          </div>
           <div class="text-sm text-muted-foreground">{{ domain.port || 80 }}</div>
           <div>
             <span 
@@ -81,7 +85,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ChevronRight, ChevronDown, Edit, Trash2, Server } from 'lucide-vue-next'
+import { ChevronRight, ChevronDown, Edit, Trash2, Server, Globe, Link2 } from 'lucide-vue-next'
 import Button from '@/components/ui/button.vue'
 import Switch from '@/components/ui/switch.vue'
 import type { Domain } from '@/types/domain'
