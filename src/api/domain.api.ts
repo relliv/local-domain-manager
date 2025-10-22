@@ -10,11 +10,15 @@ export const domainApi = {
   },
 
   async createDomain(data: DomainFormData): Promise<Domain> {
-    return window.ipcRenderer.invoke('domain:create', data);
+    // Serialize data to ensure it's IPC-safe (removes non-serializable objects)
+    const serializedData = JSON.parse(JSON.stringify(data));
+    return window.ipcRenderer.invoke('domain:create', serializedData);
   },
 
   async updateDomain(id: number, data: Partial<DomainFormData>): Promise<Domain | undefined> {
-    return window.ipcRenderer.invoke('domain:update', id, data);
+    // Serialize data to ensure it's IPC-safe (removes non-serializable objects)
+    const serializedData = JSON.parse(JSON.stringify(data));
+    return window.ipcRenderer.invoke('domain:update', id, serializedData);
   },
 
   async deleteDomain(id: number): Promise<boolean> {
