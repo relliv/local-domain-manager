@@ -2,13 +2,12 @@
   <div class="domain-tree-item">
     <div 
       class="domain-row"
-      :style="{ paddingLeft: `${(domain.level || 0) * 24 + 8}px` }"
       :class="{ 
         'hover:bg-muted/50': true,
         'bg-muted/30': domain.parent_id
       }"
     >
-      <div class="flex items-center gap-2 flex-1">
+      <div class="flex items-center gap-2 flex-1 px-2">
         <button
           v-if="domain.children && domain.children.length > 0"
           @click="toggleExpanded"
@@ -50,7 +49,7 @@
               @update:checked="$emit('toggle-status', domain)"
             />
           </div>
-          <div class="flex items-center gap-2 justify-end pr-2">
+          <div class="flex items-center gap-2 justify-end">
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
                 <Button variant="ghost" size="icon">
