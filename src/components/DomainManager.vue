@@ -16,7 +16,7 @@
           <div class="ml-5">Status</div>
           <div class="ml-4">Category</div>
           <div class="ml-6 flex items-center justify-center">Active</div>
-          <div class="ml-4 flex items-center justify-end pr-2">Actions</div>
+          <div class="ml-4 flex items-center justify-end pr-2"></div>
         </div>
         
         <!-- Tree View -->
