@@ -23,7 +23,12 @@
           <div class="flex items-center gap-2">
             <Globe v-if="!domain.parent_id" class="w-4 h-4 text-muted-foreground flex-shrink-0" />
             <Link2 v-else class="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <div class="font-medium">{{ domain.name }}</div>
+            <button
+              @click="openDomainInBrowser"
+              class="font-medium hover:text-primary hover:underline cursor-pointer text-left bg-transparent border-0 p-0"
+            >
+              {{ domain.name }}
+            </button>
           </div>
           <div class="text-sm text-muted-foreground">{{ domain.port || 80 }}</div>
           <div>
@@ -109,6 +114,19 @@ const isExpanded = ref(props.domain.isExpanded ?? false)
 
 const toggleExpanded = () => {
   isExpanded.value = !isExpanded.value
+}
+
+const getDomainUrl = () => {
+  const protocol = 'http://'
+  return `${protocol}${props.domain.name}`
+}
+
+const openDomainInBrowser = async () => {
+  try {
+    await window.ipcRenderer.invoke('open-url', getDomainUrl())
+  } catch (error) {
+    console.error('Failed to open domain in browser:', error)
+  }
 }
 </script>
 

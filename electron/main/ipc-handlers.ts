@@ -1,4 +1,4 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron';
+import { ipcMain, dialog, BrowserWindow, shell } from 'electron';
 import { DomainService } from '../../src/db/services/domain.service';
 import { HostFileService } from './host-file.service';
 import { PermissionHelper } from './permission-helper';
@@ -303,5 +303,16 @@ export function setupIpcHandlers() {
   // Get platform information
   ipcMain.handle('system:get-platform', () => {
     return process.platform;
+  });
+
+  // Open URL in default browser
+  ipcMain.handle('open-url', async (_, url: string) => {
+    try {
+      await shell.openExternal(url);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error opening URL:', error);
+      throw new Error(error.message || 'Failed to open URL');
+    }
   });
 }
