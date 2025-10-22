@@ -23,12 +23,17 @@
         </div>
         <div class="space-y-2">
           <Label htmlFor="edit-name">Domain Name</Label>
-          <Input
-            id="edit-name"
-            v-model="formData.name"
-            placeholder="example.local"
-            required
-          />
+          <div class="flex items-center gap-2">
+            <Input
+              id="edit-name"
+              v-model="formData.name"
+              placeholder="example.local"
+              required
+            />
+            <span v-if="selectedParentDomain" class="text-sm text-muted-foreground whitespace-nowrap">
+              .{{ selectedParentDomain.name }}
+            </span>
+          </div>
         </div>
         <div class="space-y-2">
           <Label htmlFor="edit-port">Port (optional)</Label>
@@ -86,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import Dialog from '@/components/ui/dialog.vue'
 import DialogContent from '@/components/ui/dialog-content.vue'
 import DialogHeader from '@/components/ui/dialog-header.vue'
@@ -123,6 +128,11 @@ const formData = ref<DomainFormData>({
   category: '',
   tags: '',
   parent_id: undefined
+})
+
+const selectedParentDomain = computed(() => {
+  if (!formData.value.parent_id) return null
+  return availableParents.value.find(d => d.id === formData.value.parent_id) || null
 })
 
 watch(() => props.open, (newVal) => {

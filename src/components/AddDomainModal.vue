@@ -32,12 +32,17 @@
         </div>
         <div class="space-y-2">
           <Label htmlFor="name">Domain Name</Label>
-          <Input
-            id="name"
-            v-model="formData.name"
-            placeholder="example.local"
-            required
-          />
+          <div class="flex items-center gap-2">
+            <Input
+              id="name"
+              v-model="formData.name"
+              placeholder="example.local"
+              required
+            />
+            <span v-if="selectedParentDomain" class="text-sm text-muted-foreground whitespace-nowrap">
+              .{{ selectedParentDomain.name }}
+            </span>
+          </div>
         </div>
         <div class="space-y-2">
           <Label htmlFor="port">Port (optional)</Label>
@@ -95,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, toRaw, onMounted } from 'vue'
+import { ref, watch, toRaw, onMounted, computed } from 'vue'
 import { AlertCircle } from 'lucide-vue-next'
 import Dialog from '@/components/ui/dialog.vue'
 import DialogContent from '@/components/ui/dialog-content.vue'
@@ -136,6 +141,11 @@ const formData = ref<DomainFormData>({
   category: '',
   tags: '',
   parent_id: undefined
+})
+
+const selectedParentDomain = computed(() => {
+  if (!formData.value.parent_id) return null
+  return availableParents.value.find(d => d.id === formData.value.parent_id) || null
 })
 
 watch(() => props.open, (newVal) => {
