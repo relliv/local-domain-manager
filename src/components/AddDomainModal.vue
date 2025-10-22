@@ -212,6 +212,12 @@ const handleSubmit = async () => {
   hostWarning.value = ''
   
   try {
+    if (selectedParentDomain.value) {
+      if (!formData.value.name.endsWith(selectedParentDomain.value.name)) {
+        formData.value.name = `${formData.value.name}.${selectedParentDomain.value.name}`;
+      }
+    }
+
     const domain = await domainApi.createDomain(toRaw(formData.value))
     emit('domain-added', domain)
     open.value = false

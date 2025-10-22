@@ -197,11 +197,21 @@ const getIndentedName = (domain: Domain): string => {
 }
 
 const handleSubmit = async () => {
-  if (!props.domain) return
+  if (!props.domain) {
+    return;
+  }
   
   isSubmitting.value = true
+
   try {
+    if (selectedParentDomain.value) {
+      if (!formData.value.name.endsWith(selectedParentDomain.value.name)) {
+        formData.value.name = `${formData.value.name}.${selectedParentDomain.value.name}`;
+      }
+    }
+
     const updatedDomain = await domainApi.updateDomain(props.domain.id, formData.value)
+
     if (updatedDomain) {
       emit('domain-updated', updatedDomain)
       open.value = false
