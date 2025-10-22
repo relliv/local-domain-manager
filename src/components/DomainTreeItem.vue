@@ -59,16 +59,16 @@
               <DropdownMenuContent align="end">
                 <DropdownMenuItem 
                   v-if="!domain.parent_id"
-                  @click="$emit('manage-proxy', domain)"
+                  @select="$emit('manage-proxy', domain)"
                 >
                   <Server class="w-4 h-4 mr-2" />
                   <span>Manage Proxy</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem @click="$emit('edit', domain)">
+                <DropdownMenuItem @select="$emit('edit', domain)">
                   <Edit class="w-4 h-4 mr-2" />
                   <span>Edit</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem @click="$emit('delete', domain)">
+                <DropdownMenuItem @select="$emit('delete', domain)">
                   <Trash2 class="w-4 h-4 mr-2" />
                   <span>Delete</span>
                 </DropdownMenuItem>
