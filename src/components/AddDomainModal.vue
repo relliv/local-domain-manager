@@ -26,7 +26,7 @@
           >
             <option :value="undefined">None (Root Domain)</option>
             <option v-for="domain in availableParents" :key="domain.id" :value="domain.id">
-              {{ getIndentedName(domain) }}
+              {{ domain.name }}
             </option>
           </select>
         </div>
@@ -207,12 +207,6 @@ const getDomainLevel = (domain: Domain): number => {
     if (!current || current === domain) break // Prevent infinite loop
   }
   return level
-}
-
-// Helper function to display indented domain names
-const getIndentedName = (domain: Domain): string => {
-  const level = getDomainLevel(domain)
-  return '  '.repeat(level) + domain.name
 }
 
 const handleSubmit = async () => {
