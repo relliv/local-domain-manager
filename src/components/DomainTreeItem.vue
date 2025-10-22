@@ -105,7 +105,7 @@ const emit = defineEmits<{
   'manage-proxy': [domain: Domain]
 }>()
 
-const isExpanded = ref(props.domain.isExpanded ?? true)
+const isExpanded = ref(props.domain.isExpanded ?? false)
 
 const toggleExpanded = () => {
   isExpanded.value = !isExpanded.value

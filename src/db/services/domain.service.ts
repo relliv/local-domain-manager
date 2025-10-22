@@ -234,7 +234,7 @@ export class DomainService {
     allDomains.forEach(domain => {
       domain.children = [];
       domain.level = 0;
-      domain.isExpanded = true;
+      domain.isExpanded = false;
       domainMap.set(domain.id, domain);
     });
     
