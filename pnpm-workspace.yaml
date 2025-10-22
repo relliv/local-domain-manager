@@ -2,3 +2,5 @@ onlyBuiltDependencies:
   - '@parcel/watcher'
   - electron
   - esbuild
+  - native-is-elevated
+  - vue-demi
